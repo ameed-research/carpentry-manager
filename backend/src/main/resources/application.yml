@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: carpentry-manager
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/carpentry_manager
+  jackson:
+    date-format: dd/MM/yyyy
+    time-zone: UTC
+
+server:
+  port: 8080
+
+app:
+  financial:
+    vat-rate: 17.0
+  storage:
+    docs-path: D:\tmp\carpentry-manager-docs
+  jwt:
+    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    expiration: 86400000 # 1 day in ms
+
+logging:
+  level:
+    root: INFO
+    com.carpentry.manager: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
