@@ -23,6 +23,9 @@ public class SupplierResponse {
     private String contactPhone;
     private String email;
     private List<Supplier.Payment> payments;
+    private List<Supplier.Invoice> invoices;
+    private List<Supplier.DeliveryNote> deliveryNotes;
     private Double totalPaid;
+    private Double balance;
     private Double debt;
 }

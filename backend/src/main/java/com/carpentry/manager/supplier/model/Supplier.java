@@ -41,6 +41,15 @@ public class Supplier {
     @Builder.Default
     private List<Payment> payments = new ArrayList<>();
 
+    @Builder.Default
+    private Double balance = 0.0;
+
+    @Builder.Default
+    private List<Invoice> invoices = new ArrayList<>();
+
+    @Builder.Default
+    private List<DeliveryNote> deliveryNotes = new ArrayList<>();
+
     public enum PaymentMethod {
         CASH, CHEQUE, MONEY_TRANSFER
     }
@@ -65,6 +74,36 @@ public class Supplier {
         private String chequeNumber;
         private LocalDate dueDate;
         private String referenceNumber;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Invoice {
+        @Builder.Default
+        private String id = UUID.randomUUID().toString();
+        private String invoiceId; // The ID from the actual document
+        private Double totalAmount; // Including VAT
+        private String sourceDocumentId;
+        private LocalDate invoiceDate;
+        private LocalDate uploadDate;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DeliveryNote {
+        @Builder.Default
+        private String id = UUID.randomUUID().toString();
+        private String deliveryNoteId; // The ID from the actual document
+        private Double totalAmount; // Including VAT (optional)
+        private String sourceDocumentId;
+        private LocalDate deliveryNoteDate;
+        private LocalDate uploadDate;
     }
 }
 

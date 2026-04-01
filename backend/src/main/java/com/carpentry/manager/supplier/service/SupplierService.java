@@ -83,6 +83,12 @@ public class SupplierService {
         }
 
         supplier.getPayments().add(payment);
+        
+        // Update balance: balance = balance + payment amount
+        if (payment.getAmount() != null) {
+            supplier.setBalance(supplier.getBalance() + payment.getAmount());
+        }
+
         return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
 
@@ -94,6 +100,14 @@ public class SupplierService {
                 .filter(payment -> payment.getId().equals(paymentId))
                 .findFirst()
                 .ifPresent(payment -> {
+                    // Update balance: subtract old amount, add new amount
+                    if (payment.getAmount() != null) {
+                        supplier.setBalance(supplier.getBalance() - payment.getAmount());
+                    }
+                    if (updatedPayment.getAmount() != null) {
+                        supplier.setBalance(supplier.getBalance() + updatedPayment.getAmount());
+                    }
+
                     payment.setDate(updatedPayment.getDate());
                     payment.setAmount(updatedPayment.getAmount());
                     payment.setMethod(updatedPayment.getMethod());
@@ -113,11 +127,21 @@ public class SupplierService {
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
 
+        supplier.getPayments().stream()
+                .filter(payment -> payment.getId().equals(paymentId))
+                .findFirst()
+                .ifPresent(payment -> {
+                    // Update balance: subtract payment amount
+                    if (payment.getAmount() != null) {
+                        supplier.setBalance(supplier.getBalance() - payment.getAmount());
+                    }
+                });
+
         supplier.getPayments().removeIf(payment -> payment.getId().equals(paymentId));
         return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
 
-    private SupplierResponse enrichSupplierResponse(Supplier supplier, boolean includePayments) {
+    private SupplierResponse enrichSupplierResponse(Supplier supplier, boolean includeDetails) {
         SupplierResponse response = supplierMapper.toResponse(supplier);
 
         double totalPaid = 0.0;
@@ -129,12 +153,17 @@ public class SupplierService {
         }
 
         response.setTotalPaid(totalPaid);
-        response.setDebt(0.0); // Wait for actual invoices to calculate debt
+        response.setBalance(supplier.getBalance() != null ? supplier.getBalance() : 0.0);
+        response.setDebt(supplier.getBalance() != null ? -supplier.getBalance() : 0.0);
 
-        if (includePayments) {
+        if (includeDetails) {
             response.setPayments(supplier.getPayments() != null ? supplier.getPayments() : new ArrayList<>());
+            response.setInvoices(supplier.getInvoices() != null ? supplier.getInvoices() : new ArrayList<>());
+            response.setDeliveryNotes(supplier.getDeliveryNotes() != null ? supplier.getDeliveryNotes() : new ArrayList<>());
         } else {
             response.setPayments(null);
+            response.setInvoices(null);
+            response.setDeliveryNotes(null);
         }
 
         return response;

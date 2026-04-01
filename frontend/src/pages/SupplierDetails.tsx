@@ -179,10 +179,21 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
         </Typography>
       </Box>
 
+      {supplier && !isNew && (
+        <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6">יתרת ספק:</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: (supplier.balance || 0) < 0 ? 'error.main' : 'success.main' }}>
+            ₪{(supplier.balance || 0).toFixed(2)}
+          </Typography>
+        </Box>
+      )}
+
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={tabValue} onChange={(_, val) => setTabValue(val)}>
           <Tab label="נתונים כלליים" />
-          <Tab label="תשלומים לספק" disabled={isNew} />
+          <Tab label="תשלומים" disabled={isNew} />
+          <Tab label="חשבוניות" disabled={isNew} />
+          <Tab label="תעודות משלוח" disabled={isNew} />
         </Tabs>
       </Box>
 
@@ -323,6 +334,92 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
                 {(!supplier.payments || supplier.payments.length === 0) && (
                   <TableRow>
                     <TableCell colSpan={6} align="center">אין תשלומים רשומים</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
+
+      {/* Tab 2: Invoices */}
+      {tabValue === 2 && !isNew && supplier && (
+        <Box sx={{ mt: 2, width: '100%' }}>
+          <TableContainer component={Paper} sx={{ width: '100%' }}>
+            <Table sx={{ width: '100%', minWidth: 600 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>מס' חשבונית</TableCell>
+                  <TableCell>תאריך חשבונית</TableCell>
+                  <TableCell>תאריך קליטה</TableCell>
+                  <TableCell>סכום (כולל מע"מ)</TableCell>
+                  <TableCell align="center">פעולות</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {supplier.invoices?.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell>{invoice.invoiceId}</TableCell>
+                    <TableCell>{formatDate(invoice.invoiceDate)}</TableCell>
+                    <TableCell>{formatDate(invoice.uploadDate)}</TableCell>
+                    <TableCell>₪{(invoice.totalAmount || 0).toFixed(2)}</TableCell>
+                    <TableCell align="center">
+                      {invoice.sourceDocumentId && (
+                        <Tooltip title="צפה במסמך מקור">
+                          <IconButton size="small">
+                            <DocIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {(!supplier.invoices || supplier.invoices.length === 0) && (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center">אין חשבוניות רשומות</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
+
+      {/* Tab 3: Delivery Notes */}
+      {tabValue === 3 && !isNew && supplier && (
+        <Box sx={{ mt: 2, width: '100%' }}>
+          <TableContainer component={Paper} sx={{ width: '100%' }}>
+            <Table sx={{ width: '100%', minWidth: 600 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>מס' תעודת משלוח</TableCell>
+                  <TableCell>תאריך תעודה</TableCell>
+                  <TableCell>תאריך קליטה</TableCell>
+                  <TableCell>סכום מוערך</TableCell>
+                  <TableCell align="center">פעולות</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {supplier.deliveryNotes?.map((dn) => (
+                  <TableRow key={dn.id}>
+                    <TableCell>{dn.deliveryNoteId}</TableCell>
+                    <TableCell>{formatDate(dn.deliveryNoteDate)}</TableCell>
+                    <TableCell>{formatDate(dn.uploadDate)}</TableCell>
+                    <TableCell>{dn.totalAmount ? `₪${dn.totalAmount.toFixed(2)}` : 'לא צוין'}</TableCell>
+                    <TableCell align="center">
+                      {dn.sourceDocumentId && (
+                        <Tooltip title="צפה במסמך מקור">
+                          <IconButton size="small">
+                            <DocIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {(!supplier.deliveryNotes || supplier.deliveryNotes.length === 0) && (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center">אין תעודות משלוח רשומות</TableCell>
                   </TableRow>
                 )}
               </TableBody>

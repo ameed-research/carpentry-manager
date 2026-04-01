@@ -88,7 +88,7 @@ export default function Suppliers() {
               <TableCell>שם הספק</TableCell>
               <TableCell>איש קשר</TableCell>
               <TableCell>טלפון</TableCell>
-              <TableCell>יתרת חוב לספק</TableCell>
+              <TableCell>יתרת ספק</TableCell>
               <TableCell align="right">פעולות</TableCell>
             </TableRow>
           </TableHead>
@@ -98,8 +98,8 @@ export default function Suppliers() {
                 <TableCell>{supplier.name}</TableCell>
                 <TableCell>{supplier.contactPerson}</TableCell>
                 <TableCell>{supplier.phone}</TableCell>
-                <TableCell sx={{ color: (supplier.debt || 0) > 0 ? 'error.main' : 'inherit' }}>
-                  ₪{(supplier.debt || 0).toFixed(2)}
+                <TableCell sx={{ color: (supplier.balance || 0) < 0 ? 'error.main' : 'success.main' }}>
+                  ₪{(supplier.balance || 0).toFixed(2)}
                 </TableCell>
                 <TableCell align="right">
                   <IconButton onClick={() => {

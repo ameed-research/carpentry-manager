@@ -1,5 +1,6 @@
 package com.carpentry.manager.document.service;
 
+import com.carpentry.manager.ai.service.GeminiService;
 import com.carpentry.manager.category.model.Category;
 import com.carpentry.manager.category.repository.CategoryRepository;
 import com.carpentry.manager.document.model.CarpentryDocument;
@@ -10,6 +11,9 @@ import com.carpentry.manager.inventory.repository.InventoryHistoryRepository;
 import com.carpentry.manager.inventory.repository.ItemRepository;
 import com.carpentry.manager.notification.model.Notification;
 import com.carpentry.manager.notification.service.NotificationService;
+import com.carpentry.manager.supplier.model.Supplier;
+import com.carpentry.manager.supplier.repository.SupplierRepository;
+import com.carpentry.manager.supplier.service.SupplierService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +24,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -37,7 +46,10 @@ public class DocumentService {
     private final ItemRepository itemRepository;
     private final InventoryHistoryRepository historyRepository;
     private final CategoryRepository categoryRepository;
+    private final SupplierRepository supplierRepository;
+    private final SupplierService supplierService;
     private final NotificationService notificationService;
+    private final GeminiService geminiService;
     private final ObjectMapper objectMapper;
 
     @Value("${app.storage.docs-path}")
@@ -77,25 +89,32 @@ public class DocumentService {
         document = documentRepository.save(document);
 
         // Process document
-        processDocument(document);
+        processDocument(document, file);
 
         return document;
     }
 
-    private void processDocument(CarpentryDocument document) {
+    private void processDocument(CarpentryDocument document, MultipartFile file) {
         try {
-            log.info("Processing document: {}", document.getOriginalName());
+            log.info("Processing document: {} of type {}", document.getOriginalName(), document.getType());
 
-            // Mock extraction logic based on document type
-            String mockJson = generateMockExtraction(document);
-            document.setExtractedData(mockJson);
+            Map<String, Object> extractedData = geminiService.extractDocumentData(file, document.getType());
+            String jsonText = objectMapper.writeValueAsString(extractedData);
+            document.setExtractedData(jsonText);
             document.setStatus(CarpentryDocument.DocumentStatus.PROCESSED);
             documentRepository.save(document);
 
-            // Update Inventory if it's an Invoice or Delivery Note
+            // Logic based on document type
             if (document.getType() == CarpentryDocument.DocumentType.INVOICE ||
                     document.getType() == CarpentryDocument.DocumentType.DELIVERY_NOTE) {
-                updateInventoryFromDocument(document);
+                
+                String supplierName = (String) extractedData.get("supplierName");
+                String supplierTaxId = (String) extractedData.get("supplierTaxId");
+                
+                Supplier supplier = findOrCreateSupplier(supplierName, supplierTaxId);
+                
+                updateInventoryFromExtractedData(document, extractedData, supplier.getId());
+                updateSupplierFromExtractedData(document, extractedData, supplier);
             }
 
             notificationService.sendNotification(
@@ -114,55 +133,71 @@ public class DocumentService {
         }
     }
 
-    private void updateInventoryFromDocument(CarpentryDocument document) throws Exception {
-        JsonNode root = objectMapper.readTree(document.getExtractedData());
-        JsonNode itemsNode = root.get("items");
-        if (itemsNode == null || !itemsNode.isArray()) {
-            return;
+    private Supplier findOrCreateSupplier(String name, String taxId) {
+        Optional<Supplier> supplier = Optional.empty();
+        if (taxId != null && !taxId.isBlank()) {
+            supplier = supplierRepository.findByTaxId(taxId);
+        }
+        if (supplier.isEmpty() && name != null && !name.isBlank()) {
+            supplier = supplierRepository.findByName(name);
         }
 
-        String username = getCurrentUsername();
+        if (supplier.isPresent()) {
+            return supplier.get();
+        }
 
-        for (JsonNode itemNode : itemsNode) {
-            String name = itemNode.get("name").asText();
-            int quantityToAdd = itemNode.get("quantity").asInt();
-            double newPrice = itemNode.get("price").asDouble();
+        // Create new supplier if not found
+        Supplier newSupplier = Supplier.builder()
+                .name(name != null ? name : "ספק לא מזוהה")
+                .taxId(taxId)
+                .balance(0.0)
+                .build();
+        return supplierRepository.save(newSupplier);
+    }
+
+    private void updateInventoryFromExtractedData(CarpentryDocument document, Map<String, Object> data, String supplierId) {
+        List<Map<String, Object>> items = (List<Map<String, Object>>) data.get("items");
+        if (items == null) return;
+
+        String username = getCurrentUsername();
+        String defaultCategoryId = categoryRepository.findByName("כללי")
+                .map(Category::getId).orElse(null);
+
+        for (Map<String, Object> itemData : items) {
+            String description = (String) itemData.get("description");
+            Double quantity = convertToDouble(itemData.get("quantity"));
+            Double price = convertToDouble(itemData.get("pricePerUnitWithoutVat"));
+
+            if (description == null || quantity == null || price == null) continue;
 
             itemRepository.findAll().stream()
-                    .filter(i -> i.getName().equalsIgnoreCase(name))
+                    .filter(i -> i.getName().equalsIgnoreCase(description))
                     .findFirst()
                     .ifPresentOrElse(
                             item -> {
-                                // Check if price changed
-                                if (!item.getPriceExcludingVAT().equals(newPrice)) {
+                                if (!item.getPriceExcludingVAT().equals(price)) {
                                     notificationService.sendNotification(
-                                            "מחיר הפריט '" + name + "' עודכן ל-₪" + newPrice + " בעקבות קליטת מסמך",
+                                            "מחיר הפריט '" + description + "' עודכן ל-₪" + price + " בעקבות קליטת מסמך",
                                             Notification.NotificationType.WARNING
                                     );
                                 }
-
-                                // Save history
                                 saveHistory(item, username);
-
-                                // Update item
-                                item.setQuantity(item.getQuantity() + quantityToAdd);
-                                item.setPriceExcludingVAT(newPrice);
+                                item.setQuantity(item.getQuantity() + quantity.intValue());
+                                item.setPriceExcludingVAT(price);
                                 item.setSourceDocumentId(document.getId());
+                                item.setSupplierId(supplierId);
                                 item.setUpdatedBy(username);
                                 item.setVersion(item.getVersion() + 1);
                                 itemRepository.save(item);
                             },
                             () -> {
-                                // Create new item
-                                String defaultCategoryId = categoryRepository.findByName("כללי")
-                                        .map(Category::getId).orElse(null);
-
                                 Item newItem = Item.builder()
-                                        .name(name)
-                                        .quantity(quantityToAdd)
-                                        .priceExcludingVAT(newPrice)
+                                        .name(description)
+                                        .quantity(quantity.intValue())
+                                        .priceExcludingVAT(price)
                                         .categoryId(defaultCategoryId)
                                         .sourceDocumentId(document.getId())
+                                        .supplierId(supplierId)
                                         .updatedBy(username)
                                         .version(0)
                                         .build();
@@ -170,6 +205,59 @@ public class DocumentService {
                             }
                     );
         }
+    }
+
+    private void updateSupplierFromExtractedData(CarpentryDocument document, Map<String, Object> data, Supplier supplier) {
+        Double totalWithVat = convertToDouble(data.get("totalAmountWithVat"));
+        String docId = (String) data.get(document.getType() == CarpentryDocument.DocumentType.INVOICE ? "invoiceId" : "deliveryNoteId");
+        String dateStr = (String) data.get("date");
+        LocalDate docDate = dateStr != null ? LocalDate.parse(dateStr) : LocalDate.now();
+
+        if (document.getType() == CarpentryDocument.DocumentType.INVOICE) {
+            Supplier.Invoice invoice = Supplier.Invoice.builder()
+                    .invoiceId(docId)
+                    .totalAmount(totalWithVat)
+                    .sourceDocumentId(document.getId())
+                    .invoiceDate(docDate)
+                    .uploadDate(LocalDate.now())
+                    .build();
+            supplier.getInvoices().add(invoice);
+            
+            // Update balance: balance = balance - totalAmountWithVat
+            if (totalWithVat != null) {
+                supplier.setBalance(supplier.getBalance() - totalWithVat);
+            }
+        } else if (document.getType() == CarpentryDocument.DocumentType.DELIVERY_NOTE) {
+            Supplier.DeliveryNote deliveryNote = Supplier.DeliveryNote.builder()
+                    .deliveryNoteId(docId)
+                    .totalAmount(totalWithVat)
+                    .sourceDocumentId(document.getId())
+                    .deliveryNoteDate(docDate)
+                    .uploadDate(LocalDate.now())
+                    .build();
+            supplier.getDeliveryNotes().add(deliveryNote);
+            
+            // Requirements don't explicitly say to update balance for delivery notes, 
+            // but usually delivery notes are followed by an invoice.
+            // Requirement 3.1 says for delivery notes "total price ... if not added set to null".
+            // Requirement 4.2 says ONLY about INVOICES updating balance.
+        }
+
+        supplierRepository.save(supplier);
+    }
+
+    private Double convertToDouble(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof Double) return (Double) obj;
+        if (obj instanceof Integer) return ((Integer) obj).doubleValue();
+        if (obj instanceof String) {
+            try {
+                return Double.parseDouble((String) obj);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private void saveHistory(Item item, String username) {
@@ -204,10 +292,5 @@ public class DocumentService {
         } catch (Exception e) {
             return "system";
         }
-    }
-
-    private String generateMockExtraction(CarpentryDocument document) {
-        // Simple mock logic
-        return "{\"items\": [{\"name\": \"MDF 17mm\", \"quantity\": 10, \"price\": 135.0}, {\"name\": \"Laminate White\", \"quantity\": 5, \"price\": 85.0}]}";
     }
 }

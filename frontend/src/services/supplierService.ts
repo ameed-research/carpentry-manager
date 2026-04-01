@@ -1,6 +1,24 @@
 import api from './api';
 import type { PaymentData } from '../components/common/PaymentDialog';
 
+export interface Invoice {
+  id: string;
+  invoiceId: string;
+  totalAmount: number;
+  sourceDocumentId: string;
+  invoiceDate: string;
+  uploadDate: string;
+}
+
+export interface DeliveryNote {
+  id: string;
+  deliveryNoteId: string;
+  totalAmount?: number;
+  sourceDocumentId: string;
+  deliveryNoteDate: string;
+  uploadDate: string;
+}
+
 export interface Supplier {
   id: string;
   name: string;
@@ -10,7 +28,10 @@ export interface Supplier {
   contactPhone?: string;
   email?: string;
   payments: PaymentData[];
+  invoices?: Invoice[];
+  deliveryNotes?: DeliveryNote[];
   totalPaid: number;
+  balance: number;
   debt: number;
 }
 
