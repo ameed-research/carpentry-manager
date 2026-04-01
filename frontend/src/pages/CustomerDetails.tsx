@@ -17,14 +17,18 @@ import {
   MenuItem,
   IconButton,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   ArrowForward as BackIcon,
   Add as AddIcon,
-  Lock as LockIcon,
-  LockOpen as UnlockIcon,
   Save as SaveIcon,
   Description as DocIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { customerService } from '../services/customerService';
 import type { Customer, Job, Payment } from '../services/customerService';
@@ -51,20 +55,15 @@ export default function CustomerDetails({ id, onBack }: Props) {
   const isNew = id === 'new';
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [tabValue, setTabValue] = useState(0);
-  const [discountLocked, setDiscountLocked] = useState(true);
 
   // Form states
   const [personalData, setPersonalData] = useState({ name: '', phone: '', email: '', address: '', discount: 0 });
   const [jobFormData, setJobFormData] = useState<Job>({ date: new Date().toISOString().split('T')[0], itemName: '', price: 0 });
-  const [paymentFormData, setPaymentFormData] = useState<Partial<Payment>>({
+  const [paymentFormData, setPaymentFormData] = useState<Payment>({
     date: new Date().toISOString().split('T')[0],
     amount: 0,
-    method: 'מזומן',
-    details: '',
-  });
-
-  // Extra payment fields
-  const [paymentExtraData, setPaymentExtraData] = useState({
+    method: 'CASH',
+    remarks: '',
     bank: '',
     branch: '',
     account: '',
@@ -72,6 +71,12 @@ export default function CustomerDetails({ id, onBack }: Props) {
     dueDate: '',
     referenceNumber: '',
   });
+
+  // Popup states
+  const [jobDialogOpen, setJobDialogOpen] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [editingJobId, setEditingJobId] = useState<string | null>(null);
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
 
   // Validation states
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -136,40 +141,105 @@ export default function CustomerDetails({ id, onBack }: Props) {
       return;
     }
     try {
-      await customerService.addJob(id, jobFormData);
+      if (editingJobId) {
+        await customerService.updateJob(id, editingJobId, jobFormData);
+      } else {
+        await customerService.addJob(id, jobFormData);
+      }
       loadCustomer();
+      setJobDialogOpen(false);
+      setEditingJobId(null);
       setJobFormData({ date: new Date().toISOString().split('T')[0], itemName: '', price: 0 });
     } catch (error) {
-      console.error('Error adding job', error);
+      console.error('Error saving job', error);
+    }
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    if (window.confirm('האם אתה בטוח שברצונך למחוק עבודה זו?')) {
+      try {
+        await customerService.deleteJob(id, jobId);
+        loadCustomer();
+      } catch (error) {
+        console.error('Error deleting job', error);
+      }
     }
   };
 
   const handleAddPayment = async () => {
-    if (paymentFormData.amount! <= 0) {
+    if (paymentFormData.amount <= 0) {
       alert('סכום חייב להיות גדול מ-0');
       return;
     }
 
-    let finalDetails = paymentFormData.details || '';
-    if (paymentFormData.method === "צ'ק") {
-      finalDetails = `בנק: ${paymentExtraData.bank}, סניף: ${paymentExtraData.branch}, חשבון: ${paymentExtraData.account}, מס' צ'ק: ${paymentExtraData.chequeNumber}, תאריך פירעון: ${formatDate(paymentExtraData.dueDate)}`;
-    } else if (paymentFormData.method === 'העברה בנקאית') {
-      finalDetails = `אסמכתא: ${paymentExtraData.referenceNumber}`;
-    }
-
     try {
-      await customerService.addPayment(id, { ...paymentFormData, details: finalDetails } as Payment);
+      if (editingPaymentId) {
+        await customerService.updatePayment(id, editingPaymentId, paymentFormData);
+      } else {
+        await customerService.addPayment(id, paymentFormData);
+      }
       loadCustomer();
+      setPaymentDialogOpen(false);
+      setEditingPaymentId(null);
       setPaymentFormData({
         date: new Date().toISOString().split('T')[0],
         amount: 0,
-        method: 'מזומן',
-        details: '',
+        method: 'CASH',
+        remarks: '',
+        bank: '',
+        branch: '',
+        account: '',
+        chequeNumber: '',
+        dueDate: '',
+        referenceNumber: '',
       });
-      setPaymentExtraData({ bank: '', branch: '', account: '', chequeNumber: '', dueDate: '', referenceNumber: '' });
     } catch (error) {
-      console.error('Error adding payment', error);
+      console.error('Error saving payment', error);
     }
+  };
+
+  const handleDeletePayment = async (paymentId: string) => {
+    if (window.confirm('האם אתה בטוח שברצונך למחוק תשלום זה?')) {
+      try {
+        await customerService.deletePayment(id, paymentId);
+        loadCustomer();
+      } catch (error) {
+        console.error('Error deleting payment', error);
+      }
+    }
+  };
+
+  const openJobDialog = (job?: Job) => {
+    if (job) {
+      setJobFormData({ ...job });
+      setEditingJobId(job.id || null);
+    } else {
+      setJobFormData({ date: new Date().toISOString().split('T')[0], itemName: '', price: 0 });
+      setEditingJobId(null);
+    }
+    setJobDialogOpen(true);
+  };
+
+  const openPaymentDialog = (payment?: Payment) => {
+    if (payment) {
+      setPaymentFormData({ ...payment });
+      setEditingPaymentId(payment.id || null);
+    } else {
+      setPaymentFormData({
+        date: new Date().toISOString().split('T')[0],
+        amount: 0,
+        method: 'CASH',
+        remarks: '',
+        bank: '',
+        branch: '',
+        account: '',
+        chequeNumber: '',
+        dueDate: '',
+        referenceNumber: '',
+      });
+      setEditingPaymentId(null);
+    }
+    setPaymentDialogOpen(true);
   };
 
   const handleCloseCase = async () => {
@@ -305,6 +375,14 @@ export default function CustomerDetails({ id, onBack }: Props) {
       {/* Tab 1: Work Items */}
       {tabValue === 1 && !isNew && customer && (
         <Box sx={{ mt: 2, width: '100%' }}>
+          {!customer.closed && (
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => openJobDialog()}>
+                הוסף עבודה
+              </Button>
+            </Box>
+          )}
+
           <TableContainer component={Paper} sx={{ width: '100%' }}>
             <Table sx={{ width: '100%', minWidth: 600 }}>
               <TableHead>
@@ -312,66 +390,37 @@ export default function CustomerDetails({ id, onBack }: Props) {
                   <TableCell>תאריך</TableCell>
                   <TableCell>תיאור</TableCell>
                   <TableCell>מחיר</TableCell>
+                  <TableCell align="center">פעולות</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {customer.jobs.map((job, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={job.id || index}>
                     <TableCell>{formatDate(job.date)}</TableCell>
                     <TableCell>{job.itemName}</TableCell>
                     <TableCell>₪{job.price.toFixed(2)}</TableCell>
+                    <TableCell align="center">
+                      {!customer.closed && (
+                        <>
+                          <IconButton size="small" color="primary" onClick={() => openJobDialog(job)}>
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton size="small" color="error" onClick={() => handleDeleteJob(job.id!)}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
                 {customer.jobs.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={3} align="center">אין עבודות רשומות</TableCell>
+                    <TableCell colSpan={4} align="center">אין עבודות רשומות</TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </TableContainer>
-
-          {!customer.closed && (
-            <Paper sx={{ p: 2, mt: 2, mb: 2 }}>
-              <Typography variant="h6" sx={{ mb: 2 }}>הוספת פריט חדש</Typography>
-              <Grid container spacing={2} alignItems="center">
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField
-                    label="תיאור הפריט"
-                    fullWidth
-                    size="small"
-                    value={jobFormData.itemName}
-                    onChange={(e) => setJobFormData({ ...jobFormData, itemName: e.target.value })}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 2 }}>
-                  <TextField
-                    label="מחיר"
-                    type="number"
-                    fullWidth
-                    size="small"
-                    value={jobFormData.price}
-                    onChange={(e) => setJobFormData({ ...jobFormData, price: Number(e.target.value) })}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 2 }}>
-                  <TextField
-                    label="תאריך"
-                    type="date"
-                    fullWidth
-                    size="small"
-                    value={jobFormData.date}
-                    onChange={(e) => setJobFormData({ ...jobFormData, date: e.target.value })}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 2 }}>
-                  <Button variant="contained" fullWidth startIcon={<AddIcon />} onClick={handleAddJob}>
-                    הוסף
-                  </Button>
-                </Grid>
-              </Grid>
-            </Paper>
-          )}
 
           <Paper sx={{ p: 2, mt: 2 }}>
             <Grid container spacing={2} justifyContent="flex-end">
@@ -388,12 +437,24 @@ export default function CustomerDetails({ id, onBack }: Props) {
                         size="small"
                         type="number"
                         value={personalData.discount}
-                        disabled={discountLocked || customer.closed}
+                        disabled={customer.closed}
                         onChange={(e) => setPersonalData({ ...personalData, discount: Number(e.target.value) })}
-                        sx={{ width: 100, mr: 1 }}
+                        sx={{ 
+                          width: 100, 
+                          mr: 1,
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                              borderColor: personalData.discount !== customer.discount ? 'error.main' : 'inherit',
+                            },
+                          },
+                        }}
                       />
-                      <IconButton onClick={() => setDiscountLocked(!discountLocked)} disabled={customer.closed}>
-                        {discountLocked ? <LockIcon fontSize="small" /> : <UnlockIcon fontSize="small" color="primary" />}
+                      <IconButton 
+                        onClick={handleSaveCustomer} 
+                        disabled={customer.closed || personalData.discount === customer.discount}
+                        color={personalData.discount !== customer.discount ? 'error' : 'default'}
+                      >
+                        <SaveIcon fontSize="small" />
                       </IconButton>
                     </Box>
                   </Box>
@@ -401,11 +462,6 @@ export default function CustomerDetails({ id, onBack }: Props) {
                     <Typography variant="h6">סה"כ לתשלום:</Typography>
                     <Typography variant="h6">₪{(customer.totalAmount - personalData.discount).toFixed(2)}</Typography>
                   </Box>
-                  {!customer.closed && !discountLocked && (
-                    <Button variant="outlined" size="small" onClick={handleSaveCustomer} sx={{ mt: 1 }}>
-                      שמור הנחה
-                    </Button>
-                  )}
                 </Box>
               </Grid>
             </Grid>
@@ -416,6 +472,14 @@ export default function CustomerDetails({ id, onBack }: Props) {
       {/* Tab 2: Payments */}
       {tabValue === 2 && !isNew && customer && (
         <Box sx={{ mt: 2, width: '100%' }}>
+          {!customer.closed && (
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => openPaymentDialog()}>
+                הוסף תשלום
+              </Button>
+            </Box>
+          )}
+
           <TableContainer component={Paper} sx={{ width: '100%' }}>
             <Table sx={{ width: '100%', minWidth: 600 }}>
               <TableHead>
@@ -423,126 +487,62 @@ export default function CustomerDetails({ id, onBack }: Props) {
                   <TableCell>תאריך</TableCell>
                   <TableCell>סכום</TableCell>
                   <TableCell>שיטת תשלום</TableCell>
+                  <TableCell>הערות</TableCell>
                   <TableCell>פרטים</TableCell>
-                  <TableCell>מסמך</TableCell>
+                  <TableCell align="center">פעולות</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {customer.payments.map((payment, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={payment.id || index}>
                     <TableCell>{formatDate(payment.date)}</TableCell>
                     <TableCell>₪{payment.amount.toFixed(2)}</TableCell>
-                    <TableCell>{payment.method}</TableCell>
-                    <TableCell>{payment.details}</TableCell>
                     <TableCell>
-                      {payment.sourceDocumentId && (
-                        <Tooltip title="צפה במסמך מקור">
-                          <IconButton size="small">
-                            <DocIcon />
-                          </IconButton>
-                        </Tooltip>
+                      {payment.method === 'CASH' ? 'מזומן' : 
+                       payment.method === 'CHEQUE' ? 'צ\'ק' : 'העברה בנקאית'}
+                    </TableCell>
+                    <TableCell>{payment.remarks}</TableCell>
+                    <TableCell sx={{ maxWidth: 300, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                      {payment.method === 'CHEQUE' && (
+                        <Typography variant="body2">
+                          בנק: {payment.bank}, סניף: {payment.branch}, חשבון: {payment.account}, מס' צ'ק: {payment.chequeNumber}, פירעון: {formatDate(payment.dueDate || '')}
+                        </Typography>
                       )}
+                      {payment.method === 'MONEY_TRANSFER' && (
+                        <Typography variant="body2">אסמכתא: {payment.referenceNumber}</Typography>
+                      )}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                        {payment.sourceDocumentId && (
+                          <Tooltip title="צפה במסמך מקור">
+                            <IconButton size="small">
+                              <DocIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {!customer.closed && (
+                          <>
+                            <IconButton size="small" color="primary" onClick={() => openPaymentDialog(payment)}>
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton size="small" color="error" onClick={() => handleDeletePayment(payment.id!)}>
+                              <DeleteIcon />
+                            </IconButton>
+                          </>
+                        )}
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
                 {customer.payments.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">אין תשלומים רשומים</TableCell>
+                    <TableCell colSpan={6} align="center">אין תשלומים רשומים</TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </TableContainer>
-
-          {!customer.closed && (
-            <Paper sx={{ p: 2, mt: 2, mb: 2 }}>
-              <Typography variant="h6" sx={{ mb: 2 }}>הוספת תשלום חדש</Typography>
-              <Grid container spacing={2} alignItems="center">
-                <Grid size={{ xs: 12, sm: 2 }}>
-                  <TextField
-                    label="סכום"
-                    type="number"
-                    fullWidth
-                    size="small"
-                    value={paymentFormData.amount}
-                    onChange={(e) => setPaymentFormData({ ...paymentFormData, amount: Number(e.target.value) })}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 2 }}>
-                  <TextField
-                    select
-                    label="שיטה"
-                    fullWidth
-                    size="small"
-                    value={paymentFormData.method}
-                    onChange={(e) => setPaymentFormData({ ...paymentFormData, method: e.target.value })}
-                  >
-                    <MenuItem value="מזומן">מזומן</MenuItem>
-                    <MenuItem value="צ'ק">צ'ק</MenuItem>
-                    <MenuItem value="העברה בנקאית">העברה בנקאית</MenuItem>
-                  </TextField>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 2 }}>
-                  <TextField
-                    label="תאריך"
-                    type="date"
-                    fullWidth
-                    size="small"
-                    value={paymentFormData.date}
-                    onChange={(e) => setPaymentFormData({ ...paymentFormData, date: e.target.value })}
-                  />
-                </Grid>
-                {paymentFormData.method === 'מזומן' && (
-                  <Grid size={{ xs: 12, sm: 3 }}>
-                    <TextField
-                      label="הערות"
-                      fullWidth
-                      size="small"
-                      value={paymentFormData.details}
-                      onChange={(e) => setPaymentFormData({ ...paymentFormData, details: e.target.value })}
-                    />
-                  </Grid>
-                )}
-                {paymentFormData.method === "צ'ק" && (
-                  <Grid size={{ xs: 12, sm: 12 }}>
-                    <Grid container spacing={2} sx={{ mt: 1 }}>
-                      <Grid size={{ xs: 12, sm: 2 }}>
-                        <TextField label="בנק" size="small" fullWidth value={paymentExtraData.bank} onChange={(e) => setPaymentExtraData({ ...paymentExtraData, bank: e.target.value })} />
-                      </Grid>
-                      <Grid size={{ xs: 12, sm: 2 }}>
-                        <TextField label="סניף" size="small" fullWidth value={paymentExtraData.branch} onChange={(e) => setPaymentExtraData({ ...paymentExtraData, branch: e.target.value })} />
-                      </Grid>
-                      <Grid size={{ xs: 12, sm: 3 }}>
-                        <TextField label="חשבון" size="small" fullWidth value={paymentExtraData.account} onChange={(e) => setPaymentExtraData({ ...paymentExtraData, account: e.target.value })} />
-                      </Grid>
-                      <Grid size={{ xs: 12, sm: 3 }}>
-                        <TextField label="מס' צ'ק" size="small" fullWidth value={paymentExtraData.chequeNumber} onChange={(e) => setPaymentExtraData({ ...paymentExtraData, chequeNumber: e.target.value })} />
-                      </Grid>
-                      <Grid size={{ xs: 12, sm: 2 }}>
-                        <TextField label="תאריך פירעון" type="date" size="small" fullWidth value={paymentExtraData.dueDate} onChange={(e) => setPaymentExtraData({ ...paymentExtraData, dueDate: e.target.value })} InputLabelProps={{ shrink: true }} />
-                      </Grid>
-                    </Grid>
-                  </Grid>
-                )}
-                {paymentFormData.method === 'העברה בנקאית' && (
-                  <Grid size={{ xs: 12, sm: 3 }}>
-                    <TextField
-                      label="מספר אסמכתא"
-                      fullWidth
-                      size="small"
-                      value={paymentExtraData.referenceNumber}
-                      onChange={(e) => setPaymentExtraData({ ...paymentExtraData, referenceNumber: e.target.value })}
-                    />
-                  </Grid>
-                )}
-                <Grid size={{ xs: 12, sm: 2 }}>
-                  <Button variant="contained" fullWidth startIcon={<AddIcon />} onClick={handleAddPayment}>
-                    הוסף תשלום
-                  </Button>
-                </Grid>
-              </Grid>
-            </Paper>
-          )}
 
           <Paper sx={{ p: 2, mt: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
@@ -560,6 +560,138 @@ export default function CustomerDetails({ id, onBack }: Props) {
           </Paper>
         </Box>
       )}
+
+      {/* Job Dialog */}
+      <Dialog open={jobDialogOpen} onClose={() => setJobDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{editingJobId ? 'עריכת עבודה' : 'הוספת עבודה חדשה'}</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                label="תיאור הפריט"
+                fullWidth
+                value={jobFormData.itemName}
+                onChange={(e) => setJobFormData({ ...jobFormData, itemName: e.target.value })}
+                sx={{ mt: 1 }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                label="מחיר"
+                type="number"
+                fullWidth
+                value={jobFormData.price}
+                onChange={(e) => setJobFormData({ ...jobFormData, price: Number(e.target.value) })}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                label="תאריך"
+                type="date"
+                fullWidth
+                value={jobFormData.date}
+                onChange={(e) => setJobFormData({ ...jobFormData, date: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setJobDialogOpen(false)}>ביטול</Button>
+          <Button onClick={handleAddJob} variant="contained">שמור</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Payment Dialog */}
+      <Dialog open={paymentDialogOpen} onClose={() => setPaymentDialogOpen(false)} fullWidth maxWidth="md">
+        <DialogTitle>{editingPaymentId ? 'עריכת תשלום' : 'הוספת תשלום חדש'}</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={4}>
+              <TextField
+                label="סכום"
+                type="number"
+                fullWidth
+                value={paymentFormData.amount}
+                onChange={(e) => setPaymentFormData({ ...paymentFormData, amount: Number(e.target.value) })}
+                sx={{ mt: 1 }}
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                select
+                label="שיטת תשלום"
+                fullWidth
+                value={paymentFormData.method}
+                onChange={(e) => setPaymentFormData({ ...paymentFormData, method: e.target.value as any })}
+                sx={{ mt: 1 }}
+              >
+                <MenuItem value="CASH">מזומן</MenuItem>
+                <MenuItem value="CHEQUE">צ'ק</MenuItem>
+                <MenuItem value="MONEY_TRANSFER">העברה בנקאית</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                label="תאריך"
+                type="date"
+                fullWidth
+                value={paymentFormData.date}
+                onChange={(e) => setPaymentFormData({ ...paymentFormData, date: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+                sx={{ mt: 1 }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="הערות"
+                fullWidth
+                multiline
+                rows={2}
+                value={paymentFormData.remarks}
+                onChange={(e) => setPaymentFormData({ ...paymentFormData, remarks: e.target.value })}
+              />
+            </Grid>
+
+            {paymentFormData.method === 'CHEQUE' && (
+              <>
+                <Grid item xs={4}>
+                  <TextField label="בנק" fullWidth value={paymentFormData.bank} onChange={(e) => setPaymentFormData({ ...paymentFormData, bank: e.target.value })} />
+                </Grid>
+                <Grid item xs={4}>
+                  <TextField label="סניף" fullWidth value={paymentFormData.branch} onChange={(e) => setPaymentFormData({ ...paymentFormData, branch: e.target.value })} />
+                </Grid>
+                <Grid item xs={4}>
+                  <TextField label="חשבון" fullWidth value={paymentFormData.account} onChange={(e) => setPaymentFormData({ ...paymentFormData, account: e.target.value })} />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField label="מס' צ'ק" fullWidth value={paymentFormData.chequeNumber} onChange={(e) => setPaymentFormData({ ...paymentFormData, chequeNumber: e.target.value })} />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="תאריך פירעון"
+                    type="date"
+                    fullWidth
+                    value={paymentFormData.dueDate}
+                    onChange={(e) => setPaymentFormData({ ...paymentFormData, dueDate: e.target.value })}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+              </>
+            )}
+
+            {paymentFormData.method === 'MONEY_TRANSFER' && (
+              <Grid item xs={12}>
+                <TextField label="מספר אסמכתא" fullWidth value={paymentFormData.referenceNumber} onChange={(e) => setPaymentFormData({ ...paymentFormData, referenceNumber: e.target.value })} />
+              </Grid>
+            )}
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPaymentDialogOpen(false)}>ביטול</Button>
+          <Button onClick={handleAddPayment} variant="contained">שמור</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -82,7 +82,40 @@ public class CustomerService {
         if (customer.isClosed()) {
             throw new RuntimeException("לא ניתן להוסיף עבודה ללקוח שתיקו סגור");
         }
+        if (job.getId() == null) {
+            job.setId(java.util.UUID.randomUUID().toString());
+        }
         customer.getJobs().add(job);
+        return enrichCustomerResponse(customerRepository.save(customer));
+    }
+
+    public CustomerResponse updateJob(String id, String jobId, Customer.Job updatedJob) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+        if (customer.isClosed()) {
+            throw new RuntimeException("לא ניתן לערוך עבודה ללקוח שתיקו סגור");
+        }
+        
+        customer.getJobs().stream()
+                .filter(job -> job.getId().equals(jobId))
+                .findFirst()
+                .ifPresent(job -> {
+                    job.setDate(updatedJob.getDate());
+                    job.setItemName(updatedJob.getItemName());
+                    job.setPrice(updatedJob.getPrice());
+                });
+                
+        return enrichCustomerResponse(customerRepository.save(customer));
+    }
+
+    public CustomerResponse deleteJob(String id, String jobId) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+        if (customer.isClosed()) {
+            throw new RuntimeException("לא ניתן למחוק עבודה ללקוח שתיקו סגור");
+        }
+        
+        customer.getJobs().removeIf(job -> job.getId().equals(jobId));
         return enrichCustomerResponse(customerRepository.save(customer));
     }
 
@@ -92,7 +125,47 @@ public class CustomerService {
         if (customer.isClosed()) {
             throw new RuntimeException("לא ניתן להוסיף תשלום ללקוח שתיקו סגור");
         }
+        if (payment.getId() == null) {
+            payment.setId(java.util.UUID.randomUUID().toString());
+        }
         customer.getPayments().add(payment);
+        return enrichCustomerResponse(customerRepository.save(customer));
+    }
+
+    public CustomerResponse updatePayment(String id, String paymentId, Customer.Payment updatedPayment) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+        if (customer.isClosed()) {
+            throw new RuntimeException("לא ניתן לערוך תשלום ללקוח שתיקו סגור");
+        }
+        
+        customer.getPayments().stream()
+                .filter(payment -> payment.getId().equals(paymentId))
+                .findFirst()
+                .ifPresent(payment -> {
+                    payment.setDate(updatedPayment.getDate());
+                    payment.setAmount(updatedPayment.getAmount());
+                    payment.setMethod(updatedPayment.getMethod());
+                    payment.setRemarks(updatedPayment.getRemarks());
+                    payment.setBank(updatedPayment.getBank());
+                    payment.setBranch(updatedPayment.getBranch());
+                    payment.setAccount(updatedPayment.getAccount());
+                    payment.setChequeNumber(updatedPayment.getChequeNumber());
+                    payment.setDueDate(updatedPayment.getDueDate());
+                    payment.setReferenceNumber(updatedPayment.getReferenceNumber());
+                });
+                
+        return enrichCustomerResponse(customerRepository.save(customer));
+    }
+
+    public CustomerResponse deletePayment(String id, String paymentId) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+        if (customer.isClosed()) {
+            throw new RuntimeException("לא ניתן למחוק תשלום ללקוח שתיקו סגור");
+        }
+        
+        customer.getPayments().removeIf(payment -> payment.getId().equals(paymentId));
         return enrichCustomerResponse(customerRepository.save(customer));
     }
 

@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Document(collection = "customers")
 @Getter
@@ -41,12 +42,18 @@ public class Customer {
 
     private boolean closed;
 
+    public enum PaymentMethod {
+        CASH, CHEQUE, MONEY_TRANSFER
+    }
+
     @Getter
     @Setter
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Job {
+        @Builder.Default
+        private String id = UUID.randomUUID().toString();
         private LocalDate date;
         private String itemName;
         private Double price;
@@ -58,10 +65,20 @@ public class Customer {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Payment {
+        @Builder.Default
+        private String id = UUID.randomUUID().toString();
         private LocalDate date;
         private Double amount;
-        private String method; // Cash, Check, Bank Transfer
-        private String details; // e.g., bank details or check number
+        private PaymentMethod method;
+        private String remarks; // Renamed from details
         private String sourceDocumentId;
+
+        // Specific payment details
+        private String bank;
+        private String branch;
+        private String account;
+        private String chequeNumber;
+        private LocalDate dueDate;
+        private String referenceNumber;
     }
 }

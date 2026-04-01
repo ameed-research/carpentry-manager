@@ -64,8 +64,28 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.addJob(id, job));
     }
 
+    @PutMapping("/{id}/jobs/{jobId}")
+    public ResponseEntity<CustomerResponse> updateJob(@PathVariable String id, @PathVariable String jobId, @RequestBody Customer.Job job) {
+        return ResponseEntity.ok(customerService.updateJob(id, jobId, job));
+    }
+
+    @DeleteMapping("/{id}/jobs/{jobId}")
+    public ResponseEntity<CustomerResponse> deleteJob(@PathVariable String id, @PathVariable String jobId) {
+        return ResponseEntity.ok(customerService.deleteJob(id, jobId));
+    }
+
     @PostMapping("/{id}/payments")
     public ResponseEntity<CustomerResponse> addPayment(@PathVariable String id, @RequestBody Customer.Payment payment) {
         return ResponseEntity.ok(customerService.addPayment(id, payment));
+    }
+
+    @PutMapping("/{id}/payments/{paymentId}")
+    public ResponseEntity<CustomerResponse> updatePayment(@PathVariable String id, @PathVariable String paymentId, @RequestBody Customer.Payment payment) {
+        return ResponseEntity.ok(customerService.updatePayment(id, paymentId, payment));
+    }
+
+    @DeleteMapping("/{id}/payments/{paymentId}")
+    public ResponseEntity<CustomerResponse> deletePayment(@PathVariable String id, @PathVariable String paymentId) {
+        return ResponseEntity.ok(customerService.deletePayment(id, paymentId));
     }
 }

@@ -1,17 +1,25 @@
 import api from './api';
 
 export interface Job {
+  id?: string;
   date: string;
   itemName: string;
   price: number;
 }
 
 export interface Payment {
+  id?: string;
   date: string;
   amount: number;
-  method: string;
-  details?: string;
+  method: 'CASH' | 'CHEQUE' | 'MONEY_TRANSFER';
+  remarks?: string;
   sourceDocumentId?: string;
+  bank?: string;
+  branch?: string;
+  account?: string;
+  chequeNumber?: string;
+  dueDate?: string;
+  referenceNumber?: string;
 }
 
 export interface Customer {
@@ -37,5 +45,9 @@ export const customerService = {
   delete: (id: string) => api.delete(`/customers/${id}`),
   close: (id: string) => api.post<Customer>(`/customers/${id}/close`),
   addJob: (id: string, job: Job) => api.post<Customer>(`/customers/${id}/jobs`, job),
+  updateJob: (id: string, jobId: string, job: Job) => api.put<Customer>(`/customers/${id}/jobs/${jobId}`, job),
+  deleteJob: (id: string, jobId: string) => api.delete<Customer>(`/customers/${id}/jobs/${jobId}`),
   addPayment: (id: string, payment: Payment) => api.post<Customer>(`/customers/${id}/payments`, payment),
+  updatePayment: (id: string, paymentId: string, payment: Payment) => api.put<Customer>(`/customers/${id}/payments/${paymentId}`, payment),
+  deletePayment: (id: string, paymentId: string) => api.delete<Customer>(`/customers/${id}/payments/${paymentId}`),
 };
