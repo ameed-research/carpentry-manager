@@ -6,6 +6,8 @@ import com.carpentry.manager.supplier.mapper.SupplierMapper;
 import com.carpentry.manager.supplier.model.Supplier;
 import com.carpentry.manager.supplier.repository.SupplierRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ public class SupplierService {
 
     private final SupplierRepository supplierRepository;
     private final SupplierMapper supplierMapper;
+    private final MessageSource messageSource;
 
     public List<SupplierResponse> getAllSuppliers() {
         return supplierRepository.findAll().stream()
@@ -27,7 +30,8 @@ public class SupplierService {
 
     public SupplierResponse createSupplier(SupplierRequest request) {
         if (supplierRepository.findByName(request.getName()).isPresent()) {
-            throw new RuntimeException("ספק בשם זה כבר קיים");
+            String message = messageSource.getMessage("supplier.create.duplicate", null, LocaleContextHolder.getLocale());
+            throw new RuntimeException(message);
         }
         Supplier supplier = supplierMapper.toEntity(request);
         return supplierMapper.toResponse(supplierRepository.save(supplier));
@@ -35,12 +39,16 @@ public class SupplierService {
 
     public SupplierResponse updateSupplier(String id, SupplierRequest request) {
         Supplier supplier = supplierRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("ספק לא נמצא"));
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("supplier.not.found", null, LocaleContextHolder.getLocale());
+                    return new RuntimeException(message);
+                });
 
         supplierRepository.findByName(request.getName())
                 .ifPresent(existing -> {
                     if (!existing.getId().equals(id)) {
-                        throw new RuntimeException("ספק בשם זה כבר קיים");
+                        String message = messageSource.getMessage("supplier.create.duplicate", null, LocaleContextHolder.getLocale());
+                        throw new RuntimeException(message);
                     }
                 });
 
@@ -50,7 +58,8 @@ public class SupplierService {
 
     public void deleteSupplier(String id) {
         if (!supplierRepository.existsById(id)) {
-            throw new RuntimeException("ספק לא נמצא");
+            String message = messageSource.getMessage("supplier.not.found", null, LocaleContextHolder.getLocale());
+            throw new RuntimeException(message);
         }
         // TODO: Check for linked items/orders before deleting
         supplierRepository.deleteById(id);

@@ -1,12 +1,11 @@
 spring:
   application:
     name: carpentry-manager
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/carpentry_manager
   jackson:
     date-format: dd/MM/yyyy
     time-zone: UTC
+  mongodb:
+    uri: mongodb://localhost:27017/carpentry_manager_001000
 
 server:
   port: 8080

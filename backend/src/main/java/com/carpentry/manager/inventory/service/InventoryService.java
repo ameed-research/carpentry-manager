@@ -9,9 +9,10 @@ import com.carpentry.manager.inventory.model.InventoryHistory;
 import com.carpentry.manager.inventory.model.Item;
 import com.carpentry.manager.inventory.repository.InventoryHistoryRepository;
 import com.carpentry.manager.inventory.repository.ItemRepository;
-import com.carpentry.manager.supplier.model.Supplier;
 import com.carpentry.manager.supplier.repository.SupplierRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,7 @@ public class InventoryService {
     private final CategoryRepository categoryRepository;
     private final SupplierRepository supplierRepository;
     private final ItemMapper itemMapper;
+    private final MessageSource messageSource;
 
     public Page<ItemResponse> getAllItems(Pageable pageable) {
         return itemRepository.findAll(pageable).map(this::enrichItemResponse);
@@ -40,9 +42,13 @@ public class InventoryService {
     public ItemResponse createItem(ItemRequest request) {
         String categoryId = request.getCategoryId();
         if (categoryId == null || categoryId.isBlank()) {
-            categoryId = categoryRepository.findByName("כללי")
+            String defaultCategoryName = messageSource.getMessage("inventory.category.default", null, LocaleContextHolder.getLocale());
+            categoryId = categoryRepository.findByName(defaultCategoryName)
                     .map(Category::getId)
-                    .orElseThrow(() -> new RuntimeException("קטגוריית ברירת מחדל לא נמצאה"));
+                    .orElseThrow(() -> {
+                        String message = messageSource.getMessage("inventory.category.default.not.found", null, LocaleContextHolder.getLocale());
+                        return new RuntimeException(message);
+                    });
         }
 
         Item item = itemMapper.toEntity(request);
@@ -55,7 +61,10 @@ public class InventoryService {
 
     public ItemResponse updateItem(String id, ItemRequest request) {
         Item item = itemRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("פריט לא נמצא"));
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("inventory.item.not.found", null, LocaleContextHolder.getLocale());
+                    return new RuntimeException(message);
+                });
 
         // Create history record before update
         InventoryHistory history = InventoryHistory.builder()
@@ -76,7 +85,8 @@ public class InventoryService {
 
     public void deleteItem(String id) {
         if (!itemRepository.existsById(id)) {
-            throw new RuntimeException("פריט לא נמצא");
+            String message = messageSource.getMessage("inventory.item.not.found", null, LocaleContextHolder.getLocale());
+            throw new RuntimeException(message);
         }
         itemRepository.deleteById(id);
     }
@@ -87,13 +97,13 @@ public class InventoryService {
 
     private ItemResponse enrichItemResponse(Item item) {
         ItemResponse response = itemMapper.toResponse(item);
-        
+
         categoryRepository.findById(item.getCategoryId())
                 .ifPresent(c -> response.setCategoryName(c.getName()));
-        
+
         supplierRepository.findById(item.getSupplierId())
                 .ifPresent(s -> response.setSupplierName(s.getName()));
-        
+
         return response;
     }
 

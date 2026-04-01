@@ -17,22 +17,22 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SupplierRequest {
 
-    @NotBlank(message = "שם הספק הוא חובה")
-    @Size(max = 100, message = "שם הספק חייב להיות עד 100 תווים")
+    @NotBlank(message = "{supplier.name.required}")
+    @Size(max = 100, message = "{supplier.name.max.size}")
     private String name;
 
-    @NotBlank(message = "טלפון ראשי הוא חובה")
-    @Pattern(regexp = "^(0[23489]|0[57]\\d)\\d{7}$", message = "מספר טלפון לא תקין")
+    @NotBlank(message = "{supplier.phone.required}")
+    @Pattern(regexp = "^(0[23489]|0[57]\\d)\\d{7}$", message = "{supplier.phone.invalid}")
     private String phone;
 
     private String taxId;
 
-    @Size(max = 100, message = "שם איש קשר חייב להיות עד 100 תווים")
+    @Size(max = 100, message = "{supplier.contact.name.max.size}")
     private String contactPerson;
 
-    @Pattern(regexp = "^$|^(0[23489]|0[57]\\d)\\d{7}$", message = "מספר טלפון של איש קשר לא תקין")
+    @Pattern(regexp = "^$|^(0[23489]|0[57]\\d)\\d{7}$", message = "{supplier.contact.phone.invalid}")
     private String contactPhone;
 
-    @Email(message = "כתובת אימייל לא תקינה")
+    @Email(message = "{supplier.email.invalid}")
     private String email;
 }

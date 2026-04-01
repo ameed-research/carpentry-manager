@@ -17,21 +17,21 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ItemRequest {
 
-    @NotBlank(message = "שם הפריט הוא חובה")
-    @Size(max = 150, message = "שם הפריט חייב להיות עד 150 תווים")
+    @NotBlank(message = "{inventory.item.name.required}")
+    @Size(max = 150, message = "{inventory.item.name.max.size}")
     private String name;
 
     private String categoryId; // Default to "כללי" if null
 
-    @NotNull(message = "כמות היא חובה")
-    @Min(value = 0, message = "הכמות חייבת להיות לפחות 0")
+    @NotNull(message = "{inventory.item.quantity.required}")
+    @Min(value = 0, message = "{inventory.item.quantity.min}")
     private Integer quantity;
 
-    @NotNull(message = "מחיר הוא חובה")
-    @Min(value = 0, message = "המחיר חייב להיות לפחות 0")
+    @NotNull(message = "{inventory.item.price.required}")
+    @Min(value = 0, message = "{inventory.item.price.min}")
     private Double priceExcludingVAT;
 
-    @NotBlank(message = "ספק הוא חובה")
+    @NotBlank(message = "{inventory.item.supplier.required}")
     private String supplierId;
 
     private String sku;
