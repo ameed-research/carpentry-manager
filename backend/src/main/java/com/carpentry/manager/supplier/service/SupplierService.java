@@ -23,7 +23,7 @@ public class SupplierService {
 
     public List<SupplierResponse> getAllSuppliers() {
         return supplierRepository.findAll().stream()
-                .map(supplierMapper::toResponse)
+                .map(this::enrichSupplierResponse)
                 .toList();
     }
 
@@ -33,7 +33,7 @@ public class SupplierService {
             throw new RuntimeException(message);
         }
         Supplier supplier = supplierMapper.toEntity(request);
-        return supplierMapper.toResponse(supplierRepository.save(supplier));
+        return enrichSupplierResponse(supplierRepository.save(supplier));
     }
 
     public SupplierResponse updateSupplier(String id, SupplierRequest request) {
@@ -52,7 +52,7 @@ public class SupplierService {
                 });
 
         supplierMapper.updateEntity(request, supplier);
-        return supplierMapper.toResponse(supplierRepository.save(supplier));
+        return enrichSupplierResponse(supplierRepository.save(supplier));
     }
 
     public void deleteSupplier(String id) {
@@ -62,5 +62,61 @@ public class SupplierService {
         }
         // TODO: Check for linked items/orders before deleting
         supplierRepository.deleteById(id);
+    }
+
+    public SupplierResponse addPayment(String id, Supplier.Payment payment) {
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
+        
+        if (payment.getId() == null) {
+            payment.setId(java.util.UUID.randomUUID().toString());
+        }
+        
+        supplier.getPayments().add(payment);
+        return enrichSupplierResponse(supplierRepository.save(supplier));
+    }
+
+    public SupplierResponse updatePayment(String id, String paymentId, Supplier.Payment updatedPayment) {
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
+        
+        supplier.getPayments().stream()
+                .filter(payment -> payment.getId().equals(paymentId))
+                .findFirst()
+                .ifPresent(payment -> {
+                    payment.setDate(updatedPayment.getDate());
+                    payment.setAmount(updatedPayment.getAmount());
+                    payment.setMethod(updatedPayment.getMethod());
+                    payment.setRemarks(updatedPayment.getRemarks());
+                    payment.setBank(updatedPayment.getBank());
+                    payment.setBranch(updatedPayment.getBranch());
+                    payment.setAccount(updatedPayment.getAccount());
+                    payment.setChequeNumber(updatedPayment.getChequeNumber());
+                    payment.setDueDate(updatedPayment.getDueDate());
+                    payment.setReferenceNumber(updatedPayment.getReferenceNumber());
+                });
+                
+        return enrichSupplierResponse(supplierRepository.save(supplier));
+    }
+
+    public SupplierResponse deletePayment(String id, String paymentId) {
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
+        
+        supplier.getPayments().removeIf(payment -> payment.getId().equals(paymentId));
+        return enrichSupplierResponse(supplierRepository.save(supplier));
+    }
+
+    private SupplierResponse enrichSupplierResponse(Supplier supplier) {
+        SupplierResponse response = supplierMapper.toResponse(supplier);
+        
+        double totalPaid = supplier.getPayments().stream()
+                .filter(p -> p.getAmount() != null)
+                .mapToDouble(Supplier.Payment::getAmount)
+                .sum();
+                
+        response.setTotalPaid(totalPaid);
+        response.setDebt(0.0); // Wait for actual invoices to calculate debt
+        return response;
     }
 }

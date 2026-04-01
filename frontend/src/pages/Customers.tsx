@@ -16,7 +16,6 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
-  Visibility as ViewIcon,
 } from '@mui/icons-material';
 import { customerService } from '../services/customerService';
 import type { Customer } from '../services/customerService';

@@ -47,4 +47,19 @@ public class SupplierController {
         supplierService.deleteSupplier(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{id}/payments")
+    public ResponseEntity<SupplierResponse> addPayment(@PathVariable String id, @RequestBody com.carpentry.manager.supplier.model.Supplier.Payment payment) {
+        return ResponseEntity.ok(supplierService.addPayment(id, payment));
+    }
+
+    @PutMapping("/{id}/payments/{paymentId}")
+    public ResponseEntity<SupplierResponse> updatePayment(@PathVariable String id, @PathVariable String paymentId, @RequestBody com.carpentry.manager.supplier.model.Supplier.Payment payment) {
+        return ResponseEntity.ok(supplierService.updatePayment(id, paymentId, payment));
+    }
+
+    @DeleteMapping("/{id}/payments/{paymentId}")
+    public ResponseEntity<SupplierResponse> deletePayment(@PathVariable String id, @PathVariable String paymentId) {
+        return ResponseEntity.ok(supplierService.deletePayment(id, paymentId));
+    }
 }
