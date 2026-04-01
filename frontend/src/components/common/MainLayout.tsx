@@ -113,7 +113,7 @@ export default function MainLayout({ children }: Props) {
         position="fixed"
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
+          mr: { sm: `${drawerWidth}px` },
         }}
       >
         <Toolbar>
@@ -122,7 +122,7 @@ export default function MainLayout({ children }: Props) {
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            sx={{ ml: 2, display: { sm: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
@@ -166,10 +166,20 @@ export default function MainLayout({ children }: Props) {
       </Box>
       <Box
         component="main"
-        sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          mr: { sm: `${drawerWidth}px` },
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
       >
         <Toolbar />
-        {children}
+        <Box sx={{ width: '95%' }}>
+          {children}
+        </Box>
       </Box>
     </Box>
   );

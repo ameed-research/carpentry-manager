@@ -37,6 +37,16 @@ interface Props {
 const ISRAELI_PHONE_REGEX = /^(0[23489]|0[57]\d)\d{7}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const formatDate = (dateString: string) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 export default function CustomerDetails({ id, onBack }: Props) {
   const isNew = id === 'new';
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -96,9 +106,6 @@ export default function CustomerDetails({ id, onBack }: Props) {
     try {
       if (isNew) {
         await customerService.create(personalData);
-        // After creation, we need to handle the state. For simplicity in this UI, 
-        // we could call onBack or update the ID if we had a way to change props.
-        // But since this is a local state managed component, we'll just go back.
         onBack();
       } else {
         await customerService.update(id, personalData);
@@ -280,8 +287,35 @@ export default function CustomerDetails({ id, onBack }: Props) {
       {/* Tab 1: Work Items */}
       {tabValue === 1 && !isNew && customer && (
         <Box sx={{ mt: 2 }}>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>תאריך</TableCell>
+                  <TableCell>תיאור</TableCell>
+                  <TableCell>מחיר</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {customer.jobs.map((job, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{formatDate(job.date)}</TableCell>
+                    <TableCell>{job.itemName}</TableCell>
+                    <TableCell>₪{job.price.toFixed(2)}</TableCell>
+                  </TableRow>
+                ))}
+                {customer.jobs.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center">אין עבודות רשומות</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
           {!customer.closed && (
-            <Paper sx={{ p: 2, mb: 2 }}>
+            <Paper sx={{ p: 2, mt: 2, mb: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>הוספת פריט חדש</Typography>
               <Grid container spacing={2} alignItems="center">
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
@@ -320,31 +354,6 @@ export default function CustomerDetails({ id, onBack }: Props) {
               </Grid>
             </Paper>
           )}
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>תאריך</TableCell>
-                  <TableCell>תיאור</TableCell>
-                  <TableCell>מחיר</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {customer.jobs.map((job, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{job.date}</TableCell>
-                    <TableCell>{job.itemName}</TableCell>
-                    <TableCell>₪{job.price.toFixed(2)}</TableCell>
-                  </TableRow>
-                ))}
-                {customer.jobs.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={3} align="center">אין עבודות רשומות</TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
 
           <Paper sx={{ p: 2, mt: 2 }}>
             <Grid container spacing={2} justifyContent="flex-end">
@@ -389,8 +398,47 @@ export default function CustomerDetails({ id, onBack }: Props) {
       {/* Tab 2: Payments */}
       {tabValue === 2 && !isNew && customer && (
         <Box sx={{ mt: 2 }}>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>תאריך</TableCell>
+                  <TableCell>סכום</TableCell>
+                  <TableCell>שיטת תשלום</TableCell>
+                  <TableCell>פרטים</TableCell>
+                  <TableCell>מסמך</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {customer.payments.map((payment, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{formatDate(payment.date)}</TableCell>
+                    <TableCell>₪{payment.amount.toFixed(2)}</TableCell>
+                    <TableCell>{payment.method}</TableCell>
+                    <TableCell>{payment.details}</TableCell>
+                    <TableCell>
+                      {payment.sourceDocumentId && (
+                        <Tooltip title="צפה במסמך מקור">
+                          <IconButton size="small">
+                            <DocIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {customer.payments.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center">אין תשלומים רשומים</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
           {!customer.closed && (
-            <Paper sx={{ p: 2, mb: 2 }}>
+            <Paper sx={{ p: 2, mt: 2, mb: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>הוספת תשלום חדש</Typography>
               <Grid container spacing={2} alignItems="center">
                 <Grid size={{ xs: 12, sm: 2 }}>
                   <TextField
@@ -444,43 +492,6 @@ export default function CustomerDetails({ id, onBack }: Props) {
               </Grid>
             </Paper>
           )}
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>תאריך</TableCell>
-                  <TableCell>סכום</TableCell>
-                  <TableCell>שיטת תשלום</TableCell>
-                  <TableCell>פרטים</TableCell>
-                  <TableCell>מסמך</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {customer.payments.map((payment, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{payment.date}</TableCell>
-                    <TableCell>₪{payment.amount.toFixed(2)}</TableCell>
-                    <TableCell>{payment.method}</TableCell>
-                    <TableCell>{payment.details}</TableCell>
-                    <TableCell>
-                      {payment.sourceDocumentId && (
-                        <Tooltip title="צפה במסמך מקור">
-                          <IconButton size="small">
-                            <DocIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {customer.payments.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center">אין תשלומים רשומים</TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
 
           <Paper sx={{ p: 2, mt: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
