@@ -70,10 +70,8 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
   useEffect(() => {
     if (isNew) {
       setSupplier(null);
-    } else if (!supplierData) {
-      loadSupplier();
     } else {
-      populatePersonalData(supplierData);
+      loadSupplier();
     }
   }, [id, supplierData]);
 

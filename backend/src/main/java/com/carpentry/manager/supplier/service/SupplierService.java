@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -76,11 +77,11 @@ public class SupplierService {
     public SupplierResponse addPayment(String id, Supplier.Payment payment) {
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
-        
+
         if (payment.getId() == null) {
             payment.setId(java.util.UUID.randomUUID().toString());
         }
-        
+
         supplier.getPayments().add(payment);
         return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
@@ -88,7 +89,7 @@ public class SupplierService {
     public SupplierResponse updatePayment(String id, String paymentId, Supplier.Payment updatedPayment) {
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
-        
+
         supplier.getPayments().stream()
                 .filter(payment -> payment.getId().equals(paymentId))
                 .findFirst()
@@ -104,21 +105,21 @@ public class SupplierService {
                     payment.setDueDate(updatedPayment.getDueDate());
                     payment.setReferenceNumber(updatedPayment.getReferenceNumber());
                 });
-                
+
         return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
 
     public SupplierResponse deletePayment(String id, String paymentId) {
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
-        
+
         supplier.getPayments().removeIf(payment -> payment.getId().equals(paymentId));
         return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
 
     private SupplierResponse enrichSupplierResponse(Supplier supplier, boolean includePayments) {
         SupplierResponse response = supplierMapper.toResponse(supplier);
-        
+
         double totalPaid = 0.0;
         if (supplier.getPayments() != null) {
             totalPaid = supplier.getPayments().stream()
@@ -126,16 +127,16 @@ public class SupplierService {
                     .mapToDouble(Supplier.Payment::getAmount)
                     .sum();
         }
-                
+
         response.setTotalPaid(totalPaid);
         response.setDebt(0.0); // Wait for actual invoices to calculate debt
-        
+
         if (includePayments) {
-            response.setPayments(supplier.getPayments() != null ? supplier.getPayments() : new java.util.ArrayList<>());
+            response.setPayments(supplier.getPayments() != null ? supplier.getPayments() : new ArrayList<>());
         } else {
             response.setPayments(null);
         }
-        
+
         return response;
     }
 }
