@@ -61,7 +61,7 @@ export default function Customers() {
   }
 
   return (
-    <Box>
+    <Box sx={{ width: '100%' }}>
       <Typography variant="h4" gutterBottom>
         ניהול לקוחות
       </Typography>
@@ -74,8 +74,8 @@ export default function Customers() {
         הוסף לקוח
       </Button>
 
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} sx={{ width: '100%' }}>
+        <Table sx={{ width: '100%', minWidth: 600 }}>
           <TableHead>
             <TableRow>
               <TableCell>שם הלקוח</TableCell>

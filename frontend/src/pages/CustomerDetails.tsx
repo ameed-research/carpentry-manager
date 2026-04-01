@@ -167,8 +167,8 @@ export default function CustomerDetails({ id, onBack }: Props) {
   if (!customer && !isNew) return <Typography>טוען...</Typography>;
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+    <Box sx={{ width: '100%' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, width: '100%' }}>
         <IconButton onClick={onBack} sx={{ mr: 2 }}>
           <BackIcon />
         </IconButton>
@@ -286,9 +286,9 @@ export default function CustomerDetails({ id, onBack }: Props) {
 
       {/* Tab 1: Work Items */}
       {tabValue === 1 && !isNew && customer && (
-        <Box sx={{ mt: 2 }}>
-          <TableContainer component={Paper}>
-            <Table>
+        <Box sx={{ mt: 2, width: '100%' }}>
+          <TableContainer component={Paper} sx={{ width: '100%' }}>
+            <Table sx={{ width: '100%', minWidth: 600 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>תאריך</TableCell>
@@ -397,9 +397,9 @@ export default function CustomerDetails({ id, onBack }: Props) {
 
       {/* Tab 2: Payments */}
       {tabValue === 2 && !isNew && customer && (
-        <Box sx={{ mt: 2 }}>
-          <TableContainer component={Paper}>
-            <Table>
+        <Box sx={{ mt: 2, width: '100%' }}>
+          <TableContainer component={Paper} sx={{ width: '100%' }}>
+            <Table sx={{ width: '100%', minWidth: 600 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>תאריך</TableCell>
