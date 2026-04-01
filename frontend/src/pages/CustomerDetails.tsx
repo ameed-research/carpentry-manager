@@ -172,10 +172,9 @@ export default function CustomerDetails({ id, onBack }: Props) {
         <IconButton onClick={onBack} sx={{ mr: 2 }}>
           <BackIcon />
         </IconButton>
-        <Typography variant="h4">
+        <Typography variant="h4" sx={{ flexGrow: 1, textAlign: 'center' }}>
           {isNew ? 'הוספת לקוח חדש' : `${customer?.name} ${customer?.closed ? '(סגור)' : ''}`}
         </Typography>
-        <Box sx={{ flexGrow: 1 }} />
         {!isNew && !customer?.closed && (
           <Button variant="outlined" color="error" onClick={handleCloseCase}>
             סגור תיק לקוח

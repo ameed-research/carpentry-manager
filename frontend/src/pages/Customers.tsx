@@ -62,17 +62,18 @@ export default function Customers() {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h4" gutterBottom align="center">
         ניהול לקוחות
       </Typography>
-      <Button
-        variant="contained"
-        startIcon={<AddIcon />}
-        onClick={() => setSelectedCustomerId('new')}
-        sx={{ mb: 2 }}
-      >
-        הוסף לקוח
-      </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setSelectedCustomerId('new')}
+        >
+          הוסף לקוח
+        </Button>
+      </Box>
 
       <TableContainer component={Paper} sx={{ width: '100%' }}>
         <Table sx={{ width: '100%', minWidth: 600 }}>

@@ -171,13 +171,10 @@ export default function MainLayout({ children }: Props) {
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           mr: { sm: `${drawerWidth}px` },
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
         }}
       >
         <Toolbar />
-        <Box sx={{ width: '95%' }}>
+        <Box sx={{ width: '95%', mx: 'auto' }}>
           {children}
         </Box>
       </Box>
