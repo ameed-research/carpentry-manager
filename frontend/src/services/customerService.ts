@@ -50,4 +50,13 @@ export const customerService = {
   addPayment: (id: string, payment: Payment) => api.post<Customer>(`/customers/${id}/payments`, payment),
   updatePayment: (id: string, paymentId: string, payment: Payment) => api.put<Customer>(`/customers/${id}/payments/${paymentId}`, payment),
   deletePayment: (id: string, paymentId: string) => api.delete<Customer>(`/customers/${id}/payments/${paymentId}`),
+  extractPaymentData: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<any>('/ai/extract-payment', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
