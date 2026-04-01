@@ -23,7 +23,7 @@ public class SupplierService {
 
     public List<SupplierResponse> getAllSuppliers() {
         return supplierRepository.findAll().stream()
-                .map(this::enrichSupplierResponse)
+                .map(s -> enrichSupplierResponse(s, false))
                 .toList();
     }
 
@@ -33,7 +33,7 @@ public class SupplierService {
                     String message = messageSource.getMessage("supplier.not.found");
                     return new RuntimeException(message);
                 });
-        return enrichSupplierResponse(supplier);
+        return enrichSupplierResponse(supplier, true);
     }
 
     public SupplierResponse createSupplier(SupplierRequest request) {
@@ -42,7 +42,7 @@ public class SupplierService {
             throw new RuntimeException(message);
         }
         Supplier supplier = supplierMapper.toEntity(request);
-        return enrichSupplierResponse(supplierRepository.save(supplier));
+        return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
 
     public SupplierResponse updateSupplier(String id, SupplierRequest request) {
@@ -61,7 +61,7 @@ public class SupplierService {
                 });
 
         supplierMapper.updateEntity(request, supplier);
-        return enrichSupplierResponse(supplierRepository.save(supplier));
+        return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
 
     public void deleteSupplier(String id) {
@@ -82,7 +82,7 @@ public class SupplierService {
         }
         
         supplier.getPayments().add(payment);
-        return enrichSupplierResponse(supplierRepository.save(supplier));
+        return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
 
     public SupplierResponse updatePayment(String id, String paymentId, Supplier.Payment updatedPayment) {
@@ -105,7 +105,7 @@ public class SupplierService {
                     payment.setReferenceNumber(updatedPayment.getReferenceNumber());
                 });
                 
-        return enrichSupplierResponse(supplierRepository.save(supplier));
+        return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
 
     public SupplierResponse deletePayment(String id, String paymentId) {
@@ -113,19 +113,29 @@ public class SupplierService {
                 .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
         
         supplier.getPayments().removeIf(payment -> payment.getId().equals(paymentId));
-        return enrichSupplierResponse(supplierRepository.save(supplier));
+        return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
 
-    private SupplierResponse enrichSupplierResponse(Supplier supplier) {
+    private SupplierResponse enrichSupplierResponse(Supplier supplier, boolean includePayments) {
         SupplierResponse response = supplierMapper.toResponse(supplier);
         
-        double totalPaid = supplier.getPayments().stream()
-                .filter(p -> p.getAmount() != null)
-                .mapToDouble(Supplier.Payment::getAmount)
-                .sum();
+        double totalPaid = 0.0;
+        if (supplier.getPayments() != null) {
+            totalPaid = supplier.getPayments().stream()
+                    .filter(p -> p.getAmount() != null)
+                    .mapToDouble(Supplier.Payment::getAmount)
+                    .sum();
+        }
                 
         response.setTotalPaid(totalPaid);
         response.setDebt(0.0); // Wait for actual invoices to calculate debt
+        
+        if (includePayments) {
+            response.setPayments(supplier.getPayments() != null ? supplier.getPayments() : new java.util.ArrayList<>());
+        } else {
+            response.setPayments(null);
+        }
+        
         return response;
     }
 }
