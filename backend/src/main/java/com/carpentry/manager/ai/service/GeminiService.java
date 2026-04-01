@@ -28,6 +28,8 @@ public class GeminiService {
     private final RestClient restClient = RestClient.create();
     @Value("${app.gemini.api-key}")
     private String apiKey;
+    @Value("${app.gemini.url}")
+    private String url;
 
     public Map<String, Object> extractPaymentData(MultipartFile file) {
         if (apiKey == null || apiKey.trim().isEmpty()) {
@@ -36,7 +38,6 @@ public class GeminiService {
         }
 
         Map<String, Object> requestBody = createRequestBody(file);
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent";
         log.info("Sending file '{}' to '{}'", file.getOriginalFilename(), url);
 
         String responseStr = restClient.post()
