@@ -133,6 +133,103 @@ public class DocumentService {
         }
     }
 
+    public Map<String, Object> analyzeInventoryDocument(MultipartFile file) throws Exception {
+        // Validate file type
+        String contentType = file.getContentType();
+        if (contentType == null || (!contentType.startsWith("image/") && !contentType.equals("application/pdf"))) {
+            throw new RuntimeException("סוג קובץ לא נתמך. יש להעלות תמונות או קבצי PDF בלבד.");
+        }
+
+        byte[] content = file.getBytes();
+        String fileHash = DigestUtils.md5Hex(content);
+
+        if (documentRepository.findByFileHash(fileHash).isPresent()) {
+            throw new RuntimeException("מסמך זה כבר הועלה בעבר");
+        }
+
+        Path root = Paths.get(docsPath);
+        if (!Files.exists(root)) {
+            Files.createDirectories(root);
+        }
+
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        Path filePath = root.resolve(fileName);
+        Files.write(filePath, content);
+
+        CarpentryDocument document = CarpentryDocument.builder()
+                .originalName(file.getOriginalFilename())
+                .filePath(filePath.toString())
+                .fileSize(file.getSize())
+                .fileHash(fileHash)
+                .uploadDate(LocalDateTime.now())
+                .status(CarpentryDocument.DocumentStatus.PENDING)
+                .build();
+
+        // 1. Send to Gemini for analysis
+        Map<String, Object> extractedData = geminiService.analyzeInventoryDocument(file);
+        
+        // 2. Determine type
+        String typeStr = (String) extractedData.get("type");
+        if ("INVOICE".equals(typeStr)) {
+            document.setType(CarpentryDocument.DocumentType.INVOICE);
+        } else if ("DELIVERY_NOTE".equals(typeStr)) {
+            document.setType(CarpentryDocument.DocumentType.DELIVERY_NOTE);
+        } else {
+            // Default to invoice if not clear, though Gemini should return one
+            document.setType(CarpentryDocument.DocumentType.INVOICE);
+        }
+
+        document = documentRepository.save(document);
+        
+        // Include document ID in response so frontend can approve it later
+        extractedData.put("documentId", document.getId());
+        
+        return extractedData;
+    }
+
+    public void approveInventoryDocument(String documentId, Map<String, Object> finalizedData) throws Exception {
+        CarpentryDocument document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("מסמך לא נמצא"));
+
+        if (document.getStatus() == CarpentryDocument.DocumentStatus.PROCESSED) {
+            throw new RuntimeException("מסמך זה כבר אושר ועובד");
+        }
+
+        String jsonText = objectMapper.writeValueAsString(finalizedData);
+        document.setExtractedData(jsonText);
+        
+        // Update document type if user changed it
+        String typeStr = (String) finalizedData.get("type");
+        if ("INVOICE".equals(typeStr)) {
+            document.setType(CarpentryDocument.DocumentType.INVOICE);
+        } else if ("DELIVERY_NOTE".equals(typeStr)) {
+            document.setType(CarpentryDocument.DocumentType.DELIVERY_NOTE);
+        }
+
+        try {
+            String supplierName = (String) finalizedData.get("supplierName");
+            String supplierTaxId = (String) finalizedData.get("supplierTaxId");
+            
+            Supplier supplier = findOrCreateSupplier(supplierName, supplierTaxId);
+            
+            updateInventoryFromExtractedData(document, finalizedData, supplier.getId());
+            updateSupplierFromExtractedData(document, finalizedData, supplier);
+
+            document.setStatus(CarpentryDocument.DocumentStatus.PROCESSED);
+            documentRepository.save(document);
+
+            notificationService.sendNotification(
+                    "מסמך המלאי " + document.getOriginalName() + " עובד ואושר בהצלחה",
+                    Notification.NotificationType.INFO
+            );
+        } catch (Exception e) {
+            log.error("Error approving document", e);
+            document.setStatus(CarpentryDocument.DocumentStatus.FAILED);
+            documentRepository.save(document);
+            throw new RuntimeException("שגיאה בעדכון הנתונים ממסמך: " + e.getMessage());
+        }
+    }
+
     private Supplier findOrCreateSupplier(String name, String taxId) {
         Optional<Supplier> supplier = Optional.empty();
         if (taxId != null && !taxId.isBlank()) {

@@ -26,6 +26,7 @@ import {
   Delete as DeleteIcon,
   Add as AddIcon,
   History as HistoryIcon,
+  CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
 import { inventoryService } from '../services/inventoryService';
 import type { Item } from '../services/inventoryService';
@@ -34,6 +35,7 @@ import type { Category } from '../services/categoryService';
 import { supplierService } from '../services/supplierService';
 import type { Supplier } from '../services/supplierService';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import InventoryUploadDialog from '../components/common/InventoryUploadDialog';
 import type { InventoryHistory } from '../types';
 
 export default function Inventory() {
@@ -47,6 +49,7 @@ export default function Inventory() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
   const [open, setOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [formData, setFormData] = useState<Partial<Item>>({});
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -172,14 +175,20 @@ export default function Inventory() {
       </Typography>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, alignItems: 'center' }}>
-        <Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => handleOpen()}
-            sx={{ mr: 2 }}
           >
             הוסף פריט
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<CloudUploadIcon />}
+            onClick={() => setUploadDialogOpen(true)}
+          >
+            העלה מסמך (AI)
           </Button>
           <TextField
             size="small"
@@ -390,6 +399,15 @@ export default function Inventory() {
         content="האם אתה בטוח שברצונך למחוק פריט זה?"
         onConfirm={handleDelete}
         onCancel={() => setDeleteId(null)}
+      />
+
+      <InventoryUploadDialog
+        open={uploadDialogOpen}
+        onClose={() => setUploadDialogOpen(false)}
+        onSuccess={() => {
+          setUploadDialogOpen(false);
+          loadData();
+        }}
       />
     </Box>
   );

@@ -36,6 +36,32 @@ public class GeminiService {
         return extractDocumentData(file, CarpentryDocument.DocumentType.PAYMENT_CHECK);
     }
 
+    public Map<String, Object> analyzeInventoryDocument(MultipartFile file) {
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            log.warn("Gemini API key is not configured");
+            return new HashMap<>();
+        }
+
+        String prompt = "Analyze this document. Determine if it is an INVOICE or a DELIVERY_NOTE. Return ONLY a JSON object with: " +
+                "type (string: 'INVOICE' or 'DELIVERY_NOTE'), " +
+                "supplierName (string), supplierTaxId (string), documentId (string: the invoice or delivery note number), date (string: YYYY-MM-DD), " +
+                "totalAmountWithVat (number, null if not present), totalAmountWithoutVat (number, null if not present), " +
+                "items (array of objects with: description, quantity, pricePerUnitWithoutVat, totalPriceWithoutVat).";
+        
+        Map<String, Object> requestBody = createRequestBody(file, prompt);
+        log.info("Sending inventory document '{}' to Gemini for analysis", file.getOriginalFilename());
+
+        String responseStr = restClient.post()
+                .uri(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("x-goog-api-key", apiKey)
+                .body(requestBody)
+                .retrieve()
+                .body(String.class);
+
+        return extractJsonAsMap(responseStr);
+    }
+
     public Map<String, Object> extractDocumentData(MultipartFile file, CarpentryDocument.DocumentType type) {
         if (apiKey == null || apiKey.trim().isEmpty()) {
             log.warn("Gemini API key is not configured");

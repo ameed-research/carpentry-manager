@@ -20,4 +20,14 @@ export const documentService = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  analyzeInventoryDocument: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<any>('/documents/analyze-inventory', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  approveInventoryDocument: (id: string, data: any) => {
+    return api.post(`/documents/${id}/approve-inventory`, data);
+  }
 };
