@@ -656,26 +656,128 @@ export default function CustomerDetails({ id, onBack }: Props) {
       </Dialog>
 
       {/* Payment Dialog */}
-      <Dialog open={paymentDialogOpen} onClose={() => setPaymentDialogOpen(false)} fullWidth >
-        <DialogTitle align='right'>{editingPaymentId ? 'עריכת תשלום' : 'הוספת תשלום חדש'}</DialogTitle>
+      <Dialog open={paymentDialogOpen} onClose={() => setPaymentDialogOpen(false)} fullWidth maxWidth="md">
+        <DialogTitle>{editingPaymentId ? 'עריכת תשלום' : 'הוספת תשלום חדש'}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
-          <Grid container direction="row" spacing={2}>
+          <Grid container spacing={4}>
+            {/* Form Fields (Right side in RTL) */}
+            <Grid item xs={12} md={!editingPaymentId ? 7 : 12}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="סכום"
+                    type="number"
+                    fullWidth
+                    value={paymentFormData.amount}
+                    onChange={(e) => setPaymentFormData({ ...paymentFormData, amount: Number(e.target.value) })}
+                    disabled={isExtracting}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="תאריך"
+                    type="date"
+                    fullWidth
+                    value={paymentFormData.date}
+                    onChange={(e) => setPaymentFormData({ ...paymentFormData, date: e.target.value })}
+                    InputLabelProps={{ shrink: true }}
+                    disabled={isExtracting}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    select
+                    label="שיטת תשלום"
+                    fullWidth
+                    value={paymentFormData.method}
+                    onChange={(e) => setPaymentFormData({ ...paymentFormData, method: e.target.value as any })}
+                    disabled={isExtracting}
+                  >
+                    <MenuItem value="CASH">מזומן</MenuItem>
+                    <MenuItem value="CHEQUE">צ'ק</MenuItem>
+                    <MenuItem value="MONEY_TRANSFER">העברה בנקאית</MenuItem>
+                  </TextField>
+                </Grid>
+                
+                {paymentFormData.method === 'CHEQUE' && (
+                  <>
+                    <Grid item xs={12} sm={4}>
+                      <TextField label="בנק" fullWidth value={paymentFormData.bank || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, bank: e.target.value })} disabled={isExtracting} />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField label="סניף" fullWidth value={paymentFormData.branch || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, branch: e.target.value })} disabled={isExtracting} />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField label="חשבון" fullWidth value={paymentFormData.account || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, account: e.target.value })} disabled={isExtracting} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField label="מס' צ'ק" fullWidth value={paymentFormData.chequeNumber || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, chequeNumber: e.target.value })} disabled={isExtracting} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="תאריך פירעון"
+                        type="date"
+                        fullWidth
+                        value={paymentFormData.dueDate || ''}
+                        onChange={(e) => setPaymentFormData({ ...paymentFormData, dueDate: e.target.value })}
+                        InputLabelProps={{ shrink: true }}
+                        disabled={isExtracting}
+                      />
+                    </Grid>
+                  </>
+                )}
+
+                {paymentFormData.method === 'MONEY_TRANSFER' && (
+                  <Grid item xs={12}>
+                    <TextField label="מספר אסמכתא" fullWidth value={paymentFormData.referenceNumber || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, referenceNumber: e.target.value })} disabled={isExtracting} />
+                  </Grid>
+                )}
+
+                <Grid item xs={12}>
+                  <TextField
+                    label="הערות"
+                    fullWidth
+                    multiline
+                    rows={3}
+                    value={paymentFormData.remarks || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val.length <= 255) {
+                        setPaymentFormData({ ...paymentFormData, remarks: val });
+                      }
+                    }}
+                    helperText={`${255 - (paymentFormData.remarks?.length || 0)} (/ 255)`}
+                    disabled={isExtracting}
+                  />
+                </Grid>
+              </Grid>
+            </Grid>
+
+            {/* Drag and Drop Area (Left side in RTL) */}
             {!editingPaymentId && (
-              <Grid item size={6} xs={6}>
+              <Grid item xs={12} md={5}>
                 <Box
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handlePaymentFileDrop}
                   sx={{
-                    border: '2px dashed #ccc',
+                    border: '2px dashed',
+                    borderColor: isExtracting ? 'primary.main' : '#ccc',
                     borderRadius: 2,
                     p: 3,
                     textAlign: 'center',
-                    cursor: 'pointer',
-                    bgcolor: '#fafafa',
-                    mt: 1,
-                    mb: 1,
+                    cursor: isExtracting ? 'default' : 'pointer',
+                    bgcolor: isExtracting ? '#f0f8ff' : '#fafafa',
+                    height: '100%',
+                    minHeight: 300,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    transition: 'all 0.2s ease'
                   }}
-                  onClick={() => document.getElementById('paymentFileInput')?.click()}
+                  onClick={() => {
+                    if (!isExtracting) document.getElementById('paymentFileInput')?.click();
+                  }}
                 >
                   <input
                     type="file"
@@ -683,110 +785,43 @@ export default function CustomerDetails({ id, onBack }: Props) {
                     hidden
                     accept="image/jpeg,image/png,image/webp,application/pdf"
                     onChange={handlePaymentFileChange}
+                    disabled={isExtracting}
                   />
                   {isExtracting ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <CircularProgress size={32} sx={{ mb: 1 }} />
-                      <Typography>מפענח נתונים...</Typography>
+                      <CircularProgress size={48} sx={{ mb: 2 }} />
+                      <Typography variant="h6" color="primary">מפענח נתונים...</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>אנא המתן בזמן שאנו סורקים את המסמך</Typography>
                     </Box>
                   ) : paymentFilePreview ? (
-                    <Box>
+                    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       {paymentFilePreview === 'PDF' ? (
-                        <Typography dir='rtl' variant="h6">מסמך PDF הועלה בהצלחה</Typography>
+                        <Box>
+                          <DocIcon sx={{ fontSize: 64, color: 'error.main', mb: 1 }} />
+                          <Typography variant="h6">מסמך PDF הועלה</Typography>
+                        </Box>
                       ) : (
-                        <img src={paymentFilePreview} alt="Preview" style={{ maxHeight: 150, maxWidth: '100%', objectFit: 'contain' }} />
+                        <img src={paymentFilePreview} alt="Preview" style={{ maxHeight: 200, maxWidth: '100%', objectFit: 'contain', borderRadius: '4px' }} />
                       )}
-                      <Typography dir='rtl' variant="body2" sx={{ mt: 1 }}>לחץ או גרור להחלפת קובץ</Typography>
+                      <Typography variant="body2" color="primary" sx={{ mt: 2, fontWeight: 'medium' }}>לחץ או גרור מסמך אחר להחלפה</Typography>
                     </Box>
                   ) : (
-                    <Box>
-                      <CloudUploadIcon fontSize="large" color="action" />
-                      <Typography dir='rtl' sx={{ mt: 1 }}>גרור ושחרר קובץ לכאן או לחץ להעלאה - תמונה או PDF</Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <CloudUploadIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                      <Typography variant="h6" gutterBottom>העלאת אסמכתא</Typography>
+                      <Typography variant="body2" color="text.secondary">גרור ושחרר קובץ לכאן</Typography>
+                      <Typography variant="body2" color="text.secondary">או לחץ לבחירת קובץ</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>תומך בתמונות (JPG, PNG) וב-PDF</Typography>
                     </Box>
                   )}
                 </Box>
               </Grid>
             )}
-            <Grid item xs={12}>
-              <Grid container direction="column" xs={12}>
-                <Grid container direction="row" xs={12} spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="סכום"
-                      type="number"
-                      value={paymentFormData.amount}
-                      onChange={(e) => setPaymentFormData({ ...paymentFormData, amount: Number(e.target.value) })}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      dir='rtl'
-                      label="התקבל בתאריך"
-                      type="date"
-
-                      value={paymentFormData.date}
-                      onChange={(e) => setPaymentFormData({ ...paymentFormData, date: e.target.value })}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
-                </Grid>
-                <TextField
-                  dir='rtl'
-                  select
-                  label="שיטת תשלום"
-                  fullWidth
-                  value={paymentFormData.method}
-                  onChange={(e) => setPaymentFormData({ ...paymentFormData, method: e.target.value as any })}
-                >
-                  <MenuItem value="CASH" dir='rtl' >מזומן</MenuItem>
-                  <MenuItem value="CHEQUE" dir='rtl'>צ'ק</MenuItem>
-                  <MenuItem value="MONEY_TRANSFER" dir='rtl'>העברה בנקאית</MenuItem>
-                </TextField>
-
-                <TextField
-                  dir='rtl'
-                  label="הערות"
-                  fullWidth
-                  value={paymentFormData.remarks || ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val.length <= 255) {
-                      setPaymentFormData({ ...paymentFormData, remarks: val });
-                    }
-                  }}
-                  helperText={`${255 - (paymentFormData.remarks?.length || 0)} (/ 255)`}
-                />
-
-                {paymentFormData.method === 'CHEQUE' && (
-                  <>
-                    <TextField label="בנק" fullWidth value={paymentFormData.bank || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, bank: e.target.value })} />
-                    <TextField label="סניף" fullWidth value={paymentFormData.branch || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, branch: e.target.value })} />
-                    <TextField label="חשבון" fullWidth value={paymentFormData.account || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, account: e.target.value })} />
-                    <TextField label="מס' צ'ק" fullWidth value={paymentFormData.chequeNumber || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, chequeNumber: e.target.value })} />
-                    <TextField
-                      label="תאריך פירעון"
-                      type="date"
-                      fullWidth
-                      value={paymentFormData.dueDate || ''}
-                      onChange={(e) => setPaymentFormData({ ...paymentFormData, dueDate: e.target.value })}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </>
-                )}
-
-                {paymentFormData.method === 'MONEY_TRANSFER' && (
-                  <Grid item xs={12}>
-                    <TextField label="מספר אסמכתא" fullWidth value={paymentFormData.referenceNumber || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, referenceNumber: e.target.value })} />
-                  </Grid>
-                )}
-
-              </Grid>
-            </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setPaymentDialogOpen(false)} disabled={isExtracting}>ביטול</Button>
-          <Button onClick={handleAddPayment} variant="contained" disabled={isExtracting}>שמור</Button>
+          <Button onClick={handleAddPayment} variant="contained" disabled={isExtracting}>שמור תשלום</Button>
         </DialogActions>
       </Dialog>
     </Box>
