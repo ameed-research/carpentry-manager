@@ -36,7 +36,8 @@ public class GeminiService {
         }
 
         Map<String, Object> requestBody = createRequestBody(file);
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent";
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent";
+        log.info("Sending file '{}' to '{}'", file.getOriginalFilename(), url);
 
         String responseStr = restClient.post()
                 .uri(url)
