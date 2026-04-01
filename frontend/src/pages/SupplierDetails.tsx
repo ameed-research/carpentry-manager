@@ -79,11 +79,10 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
 
   const loadSupplier = async () => {
     try {
-      const response = await supplierService.getAll();
-      const currentSupplier = response.data.find((s) => s.id === id);
-      if (currentSupplier) {
-        setSupplier(currentSupplier);
-        populatePersonalData(currentSupplier);
+      const response = await supplierService.getById(id);
+      if (response.data) {
+        setSupplier(response.data);
+        populatePersonalData(response.data);
       }
     } catch (error) {
       console.error('Error loading supplier', error);
@@ -185,7 +184,7 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={tabValue} onChange={(_, val) => setTabValue(val)}>
           <Tab label="נתונים כלליים" />
-          <Tab label="תשלומים" disabled={isNew} />
+          <Tab label="תשלומים לספק" disabled={isNew} />
         </Tabs>
       </Box>
 

@@ -29,6 +29,11 @@ public class SupplierController {
         return ResponseEntity.ok(supplierService.getAllSuppliers());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<SupplierResponse> getSupplierById(@PathVariable String id) {
+        return ResponseEntity.ok(supplierService.getSupplierById(id));
+    }
+
     @PostMapping
     public ResponseEntity<SupplierResponse> createSupplier(@Valid @RequestBody SupplierRequest request) {
         return ResponseEntity.ok(supplierService.createSupplier(request));

@@ -27,6 +27,15 @@ public class SupplierService {
                 .toList();
     }
 
+    public SupplierResponse getSupplierById(String id) {
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("supplier.not.found");
+                    return new RuntimeException(message);
+                });
+        return enrichSupplierResponse(supplier);
+    }
+
     public SupplierResponse createSupplier(SupplierRequest request) {
         if (supplierRepository.findByName(request.getName()).isPresent()) {
             String message = messageSource.getMessage("supplier.create.duplicate");
