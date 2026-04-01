@@ -11,7 +11,13 @@ import Suppliers from './pages/Suppliers';
 import Expenses from './pages/Expenses';
 import Documents from './pages/Documents';
 import Reports from './pages/Reports';
+import Users from './pages/Users';
 import MainLayout from './components/common/MainLayout';
+
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, roles } = useSelector((state: RootState) => state.auth);
+  return isAuthenticated && roles.includes('ADMIN') ? (children as React.JSX.Element) : <Navigate to="/" />;
+};
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
@@ -37,6 +43,14 @@ function App() {
                   <Route path="/expenses" element={<Expenses />} />
                   <Route path="/documents" element={<Documents />} />
                   <Route path="/reports" element={<Reports />} />
+                  <Route
+                    path="/users"
+                    element={
+                      <AdminRoute>
+                        <Users />
+                      </AdminRoute>
+                    }
+                  />
                   <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
               </MainLayout>

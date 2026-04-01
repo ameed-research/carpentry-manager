@@ -29,6 +29,12 @@ public class User implements UserDetails {
 
     private List<Role> roles;
 
+    @Builder.Default
+    private boolean enabled = true;
+
+    @Builder.Default
+    private boolean accountNonLocked = true;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
@@ -53,7 +59,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return accountNonLocked;
     }
 
     @Override
@@ -63,6 +69,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 }

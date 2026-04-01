@@ -29,6 +29,8 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logout } from '../../store/authSlice';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../store';
 import NotificationCenter from '../ui/NotificationCenter';
 
 const drawerWidth = 240;
@@ -42,6 +44,8 @@ export default function MainLayout({ children }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const { roles } = useSelector((state: RootState) => state.auth);
+  const isAdmin = roles.includes('ADMIN');
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -63,11 +67,15 @@ export default function MainLayout({ children }: Props) {
     { text: 'דוחות', icon: <AssessmentIcon />, path: '/reports' },
   ];
 
+  if (isAdmin) {
+    menuItems.push({ text: 'ניהול משתמשים', icon: <CustomersIcon />, path: '/users' });
+  }
+
   const drawer = (
     <div>
       <Toolbar>
         <Typography variant="h6" noWrap component="div">
-          נגריית המנהל
+          מנהל הנגריה
         </Typography>
       </Toolbar>
       <Divider />

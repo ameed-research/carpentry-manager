@@ -53,6 +53,7 @@ export default function Inventory() {
 
   const [historyOpen, setHistoryOpen] = useState(false);
   const [itemHistory, setItemHistory] = useState<InventoryHistory[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadData();
@@ -88,7 +89,21 @@ export default function Inventory() {
     );
   }, [items, filter]);
 
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.name) newErrors.name = 'שם הפריט הוא חובה';
+    if (formData.name && formData.name.length > 150) newErrors.name = 'שם הפריט חייב להיות עד 150 תווים';
+    if (!formData.categoryId) newErrors.categoryId = 'קטגוריה היא חובה';
+    if (formData.quantity === undefined || formData.quantity < 0) newErrors.quantity = 'כמות חייבת להיות 0 ומעלה';
+    if (formData.priceExcludingVAT === undefined || formData.priceExcludingVAT < 0) newErrors.priceExcludingVAT = 'מחיר חייב להיות 0 ומעלה';
+    if (!formData.supplierId) newErrors.supplierId = 'ספק הוא חובה';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleOpen = (item?: Item) => {
+    setErrors({});
     if (item) {
       setEditingItem(item);
       setFormData(item);
@@ -109,6 +124,7 @@ export default function Inventory() {
   const handleClose = () => setOpen(false);
 
   const handleSave = async () => {
+    if (!validate()) return;
     try {
       if (editingItem) {
         await inventoryService.update(editingItem.id, formData);
@@ -214,6 +230,11 @@ export default function Inventory() {
                 </TableCell>
               </TableRow>
             ))}
+            {filteredItems.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} align="center">אין פריטים במלאי</TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
         <TablePagination
@@ -243,6 +264,8 @@ export default function Inventory() {
                 required
                 value={formData.name || ''}
                 onChange={handleChange}
+                error={!!errors.name}
+                helperText={errors.name}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -254,6 +277,8 @@ export default function Inventory() {
                 required
                 value={formData.categoryId || ''}
                 onChange={handleChange}
+                error={!!errors.categoryId}
+                helperText={errors.categoryId}
               >
                 {categories.map((cat) => (
                   <MenuItem key={cat.id} value={cat.id}>
@@ -271,6 +296,8 @@ export default function Inventory() {
                 required
                 value={formData.quantity || 0}
                 onChange={handleChange}
+                error={!!errors.quantity}
+                helperText={errors.quantity}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -282,6 +309,8 @@ export default function Inventory() {
                 required
                 value={formData.priceExcludingVAT || 0}
                 onChange={handleChange}
+                error={!!errors.priceExcludingVAT}
+                helperText={errors.priceExcludingVAT}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -293,6 +322,8 @@ export default function Inventory() {
                 required
                 value={formData.supplierId || ''}
                 onChange={handleChange}
+                error={!!errors.supplierId}
+                helperText={errors.supplierId}
               >
                 {suppliers.map((sup) => (
                   <MenuItem key={sup.id} value={sup.id}>
