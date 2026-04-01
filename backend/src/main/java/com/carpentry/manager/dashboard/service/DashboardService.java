@@ -16,7 +16,7 @@ public class DashboardService {
 
     public DashboardStats getStats() {
         long totalItems = itemRepository.count();
-        
+
         // Low stock items as "Open Orders" proxy
         long lowStockCount = itemRepository.findAll().stream()
                 .filter(i -> i.getQuantity() < 5)

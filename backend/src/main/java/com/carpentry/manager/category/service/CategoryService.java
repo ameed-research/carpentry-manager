@@ -36,7 +36,7 @@ public class CategoryService {
     public CategoryResponse updateCategory(String id, CategoryRequest request) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("קטגוריה לא נמצאה"));
-        
+
         categoryRepository.findByName(request.getName())
                 .ifPresent(existing -> {
                     if (!existing.getId().equals(id)) {
@@ -51,7 +51,7 @@ public class CategoryService {
     public void deleteCategory(String id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("קטגוריה לא נמצאה"));
-        
+
         if ("כללי".equals(category.getName())) {
             throw new RuntimeException("לא ניתן למחוק את קטגוריית ברירת המחדל");
         }

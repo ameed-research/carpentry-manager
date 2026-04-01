@@ -38,10 +38,16 @@ public class CarpentryDocument {
     private String extractedData; // JSON string for now
 
     public enum DocumentStatus {
-        PENDING, PROCESSED, FAILED
+        PENDING,
+        PROCESSED,
+        FAILED
     }
 
     public enum DocumentType {
-        INVOICE, RECEIPT, DELIVERY_NOTE, PAYMENT_CHECK, BANK_TRANSFER
+        INVOICE,
+        RECEIPT,
+        DELIVERY_NOTE,
+        PAYMENT_CHECK,
+        BANK_TRANSFER
     }
 }

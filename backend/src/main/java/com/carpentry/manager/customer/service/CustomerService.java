@@ -61,7 +61,7 @@ public class CustomerService {
     public void deleteCustomer(String id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
-        
+
         if (customer.isClosed()) {
             throw new RuntimeException("לא ניתן למחוק לקוח שתיקו סגור");
         }
@@ -98,21 +98,21 @@ public class CustomerService {
 
     private CustomerResponse enrichCustomerResponse(Customer customer) {
         CustomerResponse response = customerMapper.toResponse(customer);
-        
+
         double totalAmount = customer.getJobs().stream()
                 .mapToDouble(Customer.Job::getPrice)
                 .sum();
-        
+
         double totalPaid = customer.getPayments().stream()
                 .mapToDouble(Customer.Payment::getAmount)
                 .sum();
-        
+
         double discount = customer.getDiscount() != null ? customer.getDiscount() : 0.0;
-        
+
         response.setTotalAmount(totalAmount);
         response.setTotalPaid(totalPaid);
         response.setDebt(totalAmount - totalPaid - discount);
-        
+
         return response;
     }
 }

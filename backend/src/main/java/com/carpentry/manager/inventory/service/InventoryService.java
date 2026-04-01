@@ -9,10 +9,10 @@ import com.carpentry.manager.inventory.model.InventoryHistory;
 import com.carpentry.manager.inventory.model.Item;
 import com.carpentry.manager.inventory.repository.InventoryHistoryRepository;
 import com.carpentry.manager.inventory.repository.ItemRepository;
+import com.carpentry.manager.supplier.model.Supplier;
 import com.carpentry.manager.supplier.repository.SupplierRepository;
+import com.carpentry.manager.util.MessagesUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +34,7 @@ public class InventoryService {
     private final CategoryRepository categoryRepository;
     private final SupplierRepository supplierRepository;
     private final ItemMapper itemMapper;
-    private final MessageSource messageSource;
+    private final MessagesUtils messageSource;
 
     public Page<ItemResponse> getAllItems(Pageable pageable) {
         return itemRepository.findAll(pageable).map(this::enrichItemResponse);
@@ -42,13 +43,15 @@ public class InventoryService {
     public ItemResponse createItem(ItemRequest request) {
         String categoryId = request.getCategoryId();
         if (categoryId == null || categoryId.isBlank()) {
-            String defaultCategoryName = messageSource.getMessage("inventory.category.default", null, LocaleContextHolder.getLocale());
+            String defaultCategoryName = messageSource.getMessage("inventory.category.default");
             categoryId = categoryRepository.findByName(defaultCategoryName)
                     .map(Category::getId)
-                    .orElseThrow(() -> {
-                        String message = messageSource.getMessage("inventory.category.default.not.found", null, LocaleContextHolder.getLocale());
-                        return new RuntimeException(message);
-                    });
+                    .orElseThrow(() -> new RuntimeException(messageSource.getMessage("inventory.category.default.not.found")));
+        }
+
+        Optional<Supplier> supplier = supplierRepository.findById(request.getSupplierId());
+        if (supplier.isEmpty()) {
+            throw new RuntimeException(messageSource.getMessage("supplier.not.found"));
         }
 
         Item item = itemMapper.toEntity(request);
@@ -62,7 +65,7 @@ public class InventoryService {
     public ItemResponse updateItem(String id, ItemRequest request) {
         Item item = itemRepository.findById(id)
                 .orElseThrow(() -> {
-                    String message = messageSource.getMessage("inventory.item.not.found", null, LocaleContextHolder.getLocale());
+                    String message = messageSource.getMessage("inventory.item.not.found");
                     return new RuntimeException(message);
                 });
 
@@ -85,7 +88,7 @@ public class InventoryService {
 
     public void deleteItem(String id) {
         if (!itemRepository.existsById(id)) {
-            String message = messageSource.getMessage("inventory.item.not.found", null, LocaleContextHolder.getLocale());
+            String message = messageSource.getMessage("inventory.item.not.found");
             throw new RuntimeException(message);
         }
         itemRepository.deleteById(id);

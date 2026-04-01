@@ -75,7 +75,7 @@ public class DocumentService {
                 .build();
 
         document = documentRepository.save(document);
-        
+
         // Process document
         processDocument(document);
 
@@ -85,7 +85,7 @@ public class DocumentService {
     private void processDocument(CarpentryDocument document) {
         try {
             log.info("Processing document: {}", document.getOriginalName());
-            
+
             // Mock extraction logic based on document type
             String mockJson = generateMockExtraction(document);
             document.setExtractedData(mockJson);
@@ -93,14 +93,14 @@ public class DocumentService {
             documentRepository.save(document);
 
             // Update Inventory if it's an Invoice or Delivery Note
-            if (document.getType() == CarpentryDocument.DocumentType.INVOICE || 
-                document.getType() == CarpentryDocument.DocumentType.DELIVERY_NOTE) {
+            if (document.getType() == CarpentryDocument.DocumentType.INVOICE ||
+                    document.getType() == CarpentryDocument.DocumentType.DELIVERY_NOTE) {
                 updateInventoryFromDocument(document);
             }
 
             notificationService.sendNotification(
-                "מסמך " + document.getOriginalName() + " עובד בהצלחה",
-                Notification.NotificationType.INFO
+                    "מסמך " + document.getOriginalName() + " עובד בהצלחה",
+                    Notification.NotificationType.INFO
             );
 
         } catch (Exception e) {
@@ -108,8 +108,8 @@ public class DocumentService {
             document.setStatus(CarpentryDocument.DocumentStatus.FAILED);
             documentRepository.save(document);
             notificationService.sendNotification(
-                "שגיאה בעיבוד מסמך " + document.getOriginalName(),
-                Notification.NotificationType.ERROR
+                    "שגיאה בעיבוד מסמך " + document.getOriginalName(),
+                    Notification.NotificationType.ERROR
             );
         }
     }
@@ -117,7 +117,9 @@ public class DocumentService {
     private void updateInventoryFromDocument(CarpentryDocument document) throws Exception {
         JsonNode root = objectMapper.readTree(document.getExtractedData());
         JsonNode itemsNode = root.get("items");
-        if (itemsNode == null || !itemsNode.isArray()) return;
+        if (itemsNode == null || !itemsNode.isArray()) {
+            return;
+        }
 
         String username = getCurrentUsername();
 
@@ -130,42 +132,42 @@ public class DocumentService {
                     .filter(i -> i.getName().equalsIgnoreCase(name))
                     .findFirst()
                     .ifPresentOrElse(
-                        item -> {
-                            // Check if price changed
-                            if (!item.getPriceExcludingVAT().equals(newPrice)) {
-                                notificationService.sendNotification(
-                                    "מחיר הפריט '" + name + "' עודכן ל-₪" + newPrice + " בעקבות קליטת מסמך",
-                                    Notification.NotificationType.WARNING
-                                );
+                            item -> {
+                                // Check if price changed
+                                if (!item.getPriceExcludingVAT().equals(newPrice)) {
+                                    notificationService.sendNotification(
+                                            "מחיר הפריט '" + name + "' עודכן ל-₪" + newPrice + " בעקבות קליטת מסמך",
+                                            Notification.NotificationType.WARNING
+                                    );
+                                }
+
+                                // Save history
+                                saveHistory(item, username);
+
+                                // Update item
+                                item.setQuantity(item.getQuantity() + quantityToAdd);
+                                item.setPriceExcludingVAT(newPrice);
+                                item.setSourceDocumentId(document.getId());
+                                item.setUpdatedBy(username);
+                                item.setVersion(item.getVersion() + 1);
+                                itemRepository.save(item);
+                            },
+                            () -> {
+                                // Create new item
+                                String defaultCategoryId = categoryRepository.findByName("כללי")
+                                        .map(Category::getId).orElse(null);
+
+                                Item newItem = Item.builder()
+                                        .name(name)
+                                        .quantity(quantityToAdd)
+                                        .priceExcludingVAT(newPrice)
+                                        .categoryId(defaultCategoryId)
+                                        .sourceDocumentId(document.getId())
+                                        .updatedBy(username)
+                                        .version(0)
+                                        .build();
+                                itemRepository.save(newItem);
                             }
-
-                            // Save history
-                            saveHistory(item, username);
-
-                            // Update item
-                            item.setQuantity(item.getQuantity() + quantityToAdd);
-                            item.setPriceExcludingVAT(newPrice);
-                            item.setSourceDocumentId(document.getId());
-                            item.setUpdatedBy(username);
-                            item.setVersion(item.getVersion() + 1);
-                            itemRepository.save(item);
-                        },
-                        () -> {
-                            // Create new item
-                            String defaultCategoryId = categoryRepository.findByName("כללי")
-                                    .map(Category::getId).orElse(null);
-                            
-                            Item newItem = Item.builder()
-                                    .name(name)
-                                    .quantity(quantityToAdd)
-                                    .priceExcludingVAT(newPrice)
-                                    .categoryId(defaultCategoryId)
-                                    .sourceDocumentId(document.getId())
-                                    .updatedBy(username)
-                                    .version(0)
-                                    .build();
-                            itemRepository.save(newItem);
-                        }
                     );
         }
     }

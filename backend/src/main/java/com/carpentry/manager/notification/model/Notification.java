@@ -30,6 +30,8 @@ public class Notification {
     private boolean read;
 
     public enum NotificationType {
-        INFO, WARNING, ERROR
+        INFO,
+        WARNING,
+        ERROR
     }
 }
