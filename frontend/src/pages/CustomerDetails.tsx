@@ -63,6 +63,16 @@ export default function CustomerDetails({ id, onBack }: Props) {
     details: '',
   });
 
+  // Extra payment fields
+  const [paymentExtraData, setPaymentExtraData] = useState({
+    bank: '',
+    branch: '',
+    account: '',
+    chequeNumber: '',
+    dueDate: '',
+    referenceNumber: '',
+  });
+
   // Validation states
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -139,8 +149,16 @@ export default function CustomerDetails({ id, onBack }: Props) {
       alert('סכום חייב להיות גדול מ-0');
       return;
     }
+
+    let finalDetails = paymentFormData.details || '';
+    if (paymentFormData.method === "צ'ק") {
+      finalDetails = `בנק: ${paymentExtraData.bank}, סניף: ${paymentExtraData.branch}, חשבון: ${paymentExtraData.account}, מס' צ'ק: ${paymentExtraData.chequeNumber}, תאריך פירעון: ${formatDate(paymentExtraData.dueDate)}`;
+    } else if (paymentFormData.method === 'העברה בנקאית') {
+      finalDetails = `אסמכתא: ${paymentExtraData.referenceNumber}`;
+    }
+
     try {
-      await customerService.addPayment(id, paymentFormData as Payment);
+      await customerService.addPayment(id, { ...paymentFormData, details: finalDetails } as Payment);
       loadCustomer();
       setPaymentFormData({
         date: new Date().toISOString().split('T')[0],
@@ -148,6 +166,7 @@ export default function CustomerDetails({ id, onBack }: Props) {
         method: 'מזומן',
         details: '',
       });
+      setPaymentExtraData({ bank: '', branch: '', account: '', chequeNumber: '', dueDate: '', referenceNumber: '' });
     } catch (error) {
       console.error('Error adding payment', error);
     }
@@ -473,16 +492,49 @@ export default function CustomerDetails({ id, onBack }: Props) {
                     onChange={(e) => setPaymentFormData({ ...paymentFormData, date: e.target.value })}
                   />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 3 }}>
-                  <TextField
-                    label="פרטים נוספים"
-                    fullWidth
-                    size="small"
-                    placeholder={paymentFormData.method === "צ'ק" ? "בנק, סניף, חשבון..." : "אסמכתא..."}
-                    value={paymentFormData.details}
-                    onChange={(e) => setPaymentFormData({ ...paymentFormData, details: e.target.value })}
-                  />
-                </Grid>
+                {paymentFormData.method === 'מזומן' && (
+                  <Grid size={{ xs: 12, sm: 3 }}>
+                    <TextField
+                      label="הערות"
+                      fullWidth
+                      size="small"
+                      value={paymentFormData.details}
+                      onChange={(e) => setPaymentFormData({ ...paymentFormData, details: e.target.value })}
+                    />
+                  </Grid>
+                )}
+                {paymentFormData.method === "צ'ק" && (
+                  <Grid size={{ xs: 12, sm: 12 }}>
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                      <Grid size={{ xs: 12, sm: 2 }}>
+                        <TextField label="בנק" size="small" fullWidth value={paymentExtraData.bank} onChange={(e) => setPaymentExtraData({ ...paymentExtraData, bank: e.target.value })} />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 2 }}>
+                        <TextField label="סניף" size="small" fullWidth value={paymentExtraData.branch} onChange={(e) => setPaymentExtraData({ ...paymentExtraData, branch: e.target.value })} />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 3 }}>
+                        <TextField label="חשבון" size="small" fullWidth value={paymentExtraData.account} onChange={(e) => setPaymentExtraData({ ...paymentExtraData, account: e.target.value })} />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 3 }}>
+                        <TextField label="מס' צ'ק" size="small" fullWidth value={paymentExtraData.chequeNumber} onChange={(e) => setPaymentExtraData({ ...paymentExtraData, chequeNumber: e.target.value })} />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 2 }}>
+                        <TextField label="תאריך פירעון" type="date" size="small" fullWidth value={paymentExtraData.dueDate} onChange={(e) => setPaymentExtraData({ ...paymentExtraData, dueDate: e.target.value })} InputLabelProps={{ shrink: true }} />
+                      </Grid>
+                    </Grid>
+                  </Grid>
+                )}
+                {paymentFormData.method === 'העברה בנקאית' && (
+                  <Grid size={{ xs: 12, sm: 3 }}>
+                    <TextField
+                      label="מספר אסמכתא"
+                      fullWidth
+                      size="small"
+                      value={paymentExtraData.referenceNumber}
+                      onChange={(e) => setPaymentExtraData({ ...paymentExtraData, referenceNumber: e.target.value })}
+                    />
+                  </Grid>
+                )}
                 <Grid size={{ xs: 12, sm: 2 }}>
                   <Button variant="contained" fullWidth startIcon={<AddIcon />} onClick={handleAddPayment}>
                     הוסף תשלום

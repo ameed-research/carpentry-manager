@@ -113,7 +113,7 @@ export default function MainLayout({ children }: Props) {
         position="fixed"
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mr: { sm: `${drawerWidth}px` },
+          ml: { sm: `${drawerWidth}px` },
         }}
       >
         <Toolbar>
@@ -122,7 +122,7 @@ export default function MainLayout({ children }: Props) {
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ ml: 2, display: { sm: 'none' } }}
+            sx={{ mr: 2, display: { sm: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
@@ -148,7 +148,7 @@ export default function MainLayout({ children }: Props) {
             display: { xs: 'block', sm: 'none' },
             '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
           }}
-          anchor="right"
+          anchor="left"
         >
           {drawer}
         </Drawer>
@@ -159,7 +159,7 @@ export default function MainLayout({ children }: Props) {
             '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
           }}
           open
-          anchor="right"
+          anchor="left"
         >
           {drawer}
         </Drawer>
@@ -170,7 +170,7 @@ export default function MainLayout({ children }: Props) {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mr: { sm: `${drawerWidth}px` },
+          ml: { sm: `${drawerWidth}px` },
         }}
       >
         <Toolbar />
