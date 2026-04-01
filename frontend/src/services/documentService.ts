@@ -29,5 +29,8 @@ export const documentService = {
   },
   approveInventoryDocument: (id: string, data: any) => {
     return api.post(`/documents/${id}/approve-inventory`, data);
+  },
+  getDownloadUrl: (id: string) => {
+    return `${api.defaults.baseURL}/documents/${id}/download`;
   }
 };

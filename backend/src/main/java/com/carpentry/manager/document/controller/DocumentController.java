@@ -52,4 +52,19 @@ public class DocumentController {
         documentService.approveInventoryDocument(id, data);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/{id}/download")
+    public ResponseEntity<org.springframework.core.io.Resource> downloadDocument(@PathVariable String id) throws Exception {
+        org.springframework.core.io.Resource resource = documentService.downloadDocument(id);
+        String contentType = "application/octet-stream";
+        if (resource.getFilename() != null) {
+            if (resource.getFilename().endsWith(".pdf")) contentType = "application/pdf";
+            else if (resource.getFilename().endsWith(".png")) contentType = "image/png";
+            else if (resource.getFilename().endsWith(".jpg") || resource.getFilename().endsWith(".jpeg")) contentType = "image/jpeg";
+        }
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, contentType)
+                .body(resource);
+    }
 }

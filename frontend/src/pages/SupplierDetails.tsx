@@ -26,9 +26,12 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { supplierService } from '../services/supplierService';
-import type { Supplier } from '../services/supplierService';
+import type { Supplier, Invoice } from '../services/supplierService';
 import PaymentDialog from '../components/common/PaymentDialog';
 import type { PaymentData } from '../components/common/PaymentDialog';
+import InvoiceDialog from '../components/common/InvoiceDialog';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+import { documentService } from '../services/documentService';
 
 interface Props {
   id: string; // 'new' if creating a new supplier
@@ -66,6 +69,10 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<PaymentData | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isNew) {
@@ -164,6 +171,39 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
       setEditingPayment(null);
     }
     setPaymentDialogOpen(true);
+  };
+
+  const openInvoiceDialog = (invoice: Invoice) => {
+    setEditingInvoice(invoice);
+    setInvoiceDialogOpen(true);
+  };
+
+  const handleSaveInvoice = async (invoice: Invoice) => {
+    try {
+      if (editingInvoice && editingInvoice.id) {
+        await supplierService.updateInvoice(supplier!.id, editingInvoice.id, invoice);
+      }
+      setInvoiceDialogOpen(false);
+      loadSupplier();
+    } catch (error) {
+      console.error('Error saving invoice', error);
+    }
+  };
+
+  const handleDeleteInvoice = async () => {
+    if (deleteInvoiceId) {
+      try {
+        await supplierService.deleteInvoice(supplier!.id, deleteInvoiceId);
+        setDeleteInvoiceId(null);
+        loadSupplier();
+      } catch (error) {
+        console.error('Error deleting invoice', error);
+      }
+    }
+  };
+
+  const handleDownloadDocument = (docId: string) => {
+    window.open(documentService.getDownloadUrl(docId), '_blank');
   };
 
   if (!supplier && !isNew) return <Typography>טוען...</Typography>;
@@ -364,13 +404,21 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
                     <TableCell>{formatDate(invoice.uploadDate)}</TableCell>
                     <TableCell>₪{(invoice.totalAmount || 0).toFixed(2)}</TableCell>
                     <TableCell align="center">
-                      {invoice.sourceDocumentId && (
-                        <Tooltip title="צפה במסמך מקור">
-                          <IconButton size="small">
-                            <DocIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
+                      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                        {invoice.sourceDocumentId && (
+                          <Tooltip title="הורד מסמך מקור">
+                            <IconButton size="small" onClick={() => handleDownloadDocument(invoice.sourceDocumentId)}>
+                              <DocIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        <IconButton size="small" color="primary" onClick={() => openInvoiceDialog(invoice)}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton size="small" color="error" onClick={() => setDeleteInvoiceId(invoice.id)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -408,8 +456,8 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
                     <TableCell>{dn.totalAmount ? `₪${dn.totalAmount.toFixed(2)}` : 'לא צוין'}</TableCell>
                     <TableCell align="center">
                       {dn.sourceDocumentId && (
-                        <Tooltip title="צפה במסמך מקור">
-                          <IconButton size="small">
+                        <Tooltip title="הורד מסמך מקור">
+                          <IconButton size="small" onClick={() => handleDownloadDocument(dn.sourceDocumentId)}>
                             <DocIcon />
                           </IconButton>
                         </Tooltip>
@@ -428,12 +476,27 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
         </Box>
       )}
 
-      {/* Payment Dialog Component */}
+      {/* Dialog Components */}
       <PaymentDialog
         open={paymentDialogOpen}
         onClose={() => setPaymentDialogOpen(false)}
         onSave={handleAddPayment}
         initialData={editingPayment}
+      />
+      
+      <InvoiceDialog
+        open={invoiceDialogOpen}
+        onClose={() => setInvoiceDialogOpen(false)}
+        onSave={handleSaveInvoice}
+        initialData={editingInvoice}
+      />
+
+      <ConfirmDialog
+        open={!!deleteInvoiceId}
+        title="מחיקת חשבונית"
+        content="האם אתה בטוח שברצונך למחוק חשבונית זו? מחיקת החשבונית תשפיע על יתרת הספק."
+        onConfirm={handleDeleteInvoice}
+        onCancel={() => setDeleteInvoiceId(null)}
       />
     </Box>
   );

@@ -108,10 +108,7 @@ public class DocumentService {
             if (document.getType() == CarpentryDocument.DocumentType.INVOICE ||
                     document.getType() == CarpentryDocument.DocumentType.DELIVERY_NOTE) {
                 
-                String supplierName = (String) extractedData.get("supplierName");
-                String supplierTaxId = (String) extractedData.get("supplierTaxId");
-                
-                Supplier supplier = findOrCreateSupplier(supplierName, supplierTaxId);
+                Supplier supplier = findOrCreateSupplier(extractedData);
                 
                 updateInventoryFromExtractedData(document, extractedData, supplier.getId());
                 updateSupplierFromExtractedData(document, extractedData, supplier);
@@ -207,10 +204,7 @@ public class DocumentService {
         }
 
         try {
-            String supplierName = (String) finalizedData.get("supplierName");
-            String supplierTaxId = (String) finalizedData.get("supplierTaxId");
-            
-            Supplier supplier = findOrCreateSupplier(supplierName, supplierTaxId);
+            Supplier supplier = findOrCreateSupplier(finalizedData);
             
             updateInventoryFromExtractedData(document, finalizedData, supplier.getId());
             updateSupplierFromExtractedData(document, finalizedData, supplier);
@@ -230,7 +224,12 @@ public class DocumentService {
         }
     }
 
-    private Supplier findOrCreateSupplier(String name, String taxId) {
+    private Supplier findOrCreateSupplier(Map<String, Object> data) {
+        String name = (String) data.get("supplierName");
+        String taxId = (String) data.get("supplierTaxId");
+        String phone = (String) data.get("supplierPhone");
+        String email = (String) data.get("supplierEmail");
+
         Optional<Supplier> supplier = Optional.empty();
         if (taxId != null && !taxId.isBlank()) {
             supplier = supplierRepository.findByTaxId(taxId);
@@ -247,6 +246,8 @@ public class DocumentService {
         Supplier newSupplier = Supplier.builder()
                 .name(name != null ? name : "ספק לא מזוהה")
                 .taxId(taxId)
+                .phone(phone)
+                .email(email)
                 .balance(0.0)
                 .build();
         return supplierRepository.save(newSupplier);
@@ -264,6 +265,7 @@ public class DocumentService {
             String description = (String) itemData.get("description");
             Double quantity = convertToDouble(itemData.get("quantity"));
             Double price = convertToDouble(itemData.get("pricePerUnitWithoutVat"));
+            String sku = (String) itemData.get("sku");
 
             if (description == null || quantity == null || price == null) continue;
 
@@ -283,6 +285,9 @@ public class DocumentService {
                                 item.setPriceExcludingVAT(price);
                                 item.setSourceDocumentId(document.getId());
                                 item.setSupplierId(supplierId);
+                                if (sku != null && !sku.isBlank() && (item.getSku() == null || item.getSku().isBlank())) {
+                                    item.setSku(sku);
+                                }
                                 item.setUpdatedBy(username);
                                 item.setVersion(item.getVersion() + 1);
                                 itemRepository.save(item);
@@ -295,6 +300,7 @@ public class DocumentService {
                                         .categoryId(defaultCategoryId)
                                         .sourceDocumentId(document.getId())
                                         .supplierId(supplierId)
+                                        .sku(sku)
                                         .updatedBy(username)
                                         .version(0)
                                         .build();
@@ -306,7 +312,13 @@ public class DocumentService {
 
     private void updateSupplierFromExtractedData(CarpentryDocument document, Map<String, Object> data, Supplier supplier) {
         Double totalWithVat = convertToDouble(data.get("totalAmountWithVat"));
-        String docId = (String) data.get(document.getType() == CarpentryDocument.DocumentType.INVOICE ? "invoiceId" : "deliveryNoteId");
+        
+        // Handle "documentId" for all types, or fallback to specific fields
+        String docId = (String) data.get("documentId");
+        if (docId == null) {
+            docId = (String) data.get(document.getType() == CarpentryDocument.DocumentType.INVOICE ? "invoiceId" : "deliveryNoteId");
+        }
+        
         String dateStr = (String) data.get("date");
         LocalDate docDate = dateStr != null ? LocalDate.parse(dateStr) : LocalDate.now();
 
@@ -333,14 +345,21 @@ public class DocumentService {
                     .uploadDate(LocalDate.now())
                     .build();
             supplier.getDeliveryNotes().add(deliveryNote);
-            
-            // Requirements don't explicitly say to update balance for delivery notes, 
-            // but usually delivery notes are followed by an invoice.
-            // Requirement 3.1 says for delivery notes "total price ... if not added set to null".
-            // Requirement 4.2 says ONLY about INVOICES updating balance.
         }
 
         supplierRepository.save(supplier);
+    }
+
+    public org.springframework.core.io.Resource downloadDocument(String id) throws Exception {
+        CarpentryDocument document = documentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("מסמך לא נמצא"));
+
+        Path filePath = Paths.get(document.getFilePath());
+        if (!Files.exists(filePath)) {
+            throw new RuntimeException("קובץ לא נמצא בשרת");
+        }
+
+        return new org.springframework.core.io.UrlResource(filePath.toUri());
     }
 
     private Double convertToDouble(Object obj) {

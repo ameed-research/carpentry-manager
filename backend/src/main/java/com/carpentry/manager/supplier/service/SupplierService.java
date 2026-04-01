@@ -141,6 +141,48 @@ public class SupplierService {
         return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
 
+    public SupplierResponse updateInvoice(String id, String invoiceId, Supplier.Invoice updatedInvoice) {
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
+
+        supplier.getInvoices().stream()
+                .filter(invoice -> invoice.getId().equals(invoiceId))
+                .findFirst()
+                .ifPresent(invoice -> {
+                    // Reverse old amount, apply new amount
+                    if (invoice.getTotalAmount() != null) {
+                        supplier.setBalance(supplier.getBalance() + invoice.getTotalAmount());
+                    }
+                    if (updatedInvoice.getTotalAmount() != null) {
+                        supplier.setBalance(supplier.getBalance() - updatedInvoice.getTotalAmount());
+                    }
+
+                    invoice.setInvoiceId(updatedInvoice.getInvoiceId());
+                    invoice.setInvoiceDate(updatedInvoice.getInvoiceDate());
+                    invoice.setTotalAmount(updatedInvoice.getTotalAmount());
+                });
+
+        return enrichSupplierResponse(supplierRepository.save(supplier), true);
+    }
+
+    public SupplierResponse deleteInvoice(String id, String invoiceId) {
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
+
+        supplier.getInvoices().stream()
+                .filter(invoice -> invoice.getId().equals(invoiceId))
+                .findFirst()
+                .ifPresent(invoice -> {
+                    // Reverse the invoice amount
+                    if (invoice.getTotalAmount() != null) {
+                        supplier.setBalance(supplier.getBalance() + invoice.getTotalAmount());
+                    }
+                });
+
+        supplier.getInvoices().removeIf(invoice -> invoice.getId().equals(invoiceId));
+        return enrichSupplierResponse(supplierRepository.save(supplier), true);
+    }
+
     private SupplierResponse enrichSupplierResponse(Supplier supplier, boolean includeDetails) {
         SupplierResponse response = supplierMapper.toResponse(supplier);
 

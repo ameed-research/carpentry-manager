@@ -44,9 +44,10 @@ public class GeminiService {
 
         String prompt = "Analyze this document. Determine if it is an INVOICE or a DELIVERY_NOTE. Return ONLY a JSON object with: " +
                 "type (string: 'INVOICE' or 'DELIVERY_NOTE'), " +
-                "supplierName (string), supplierTaxId (string), documentId (string: the invoice or delivery note number), date (string: YYYY-MM-DD), " +
+                "supplierName (string), supplierTaxId (string), supplierPhone (string, null if not present), supplierEmail (string, null if not present), " +
+                "documentId (string: the invoice or delivery note number), date (string: YYYY-MM-DD), " +
                 "totalAmountWithVat (number, null if not present), totalAmountWithoutVat (number, null if not present), " +
-                "items (array of objects with: description, quantity, pricePerUnitWithoutVat, totalPriceWithoutVat).";
+                "items (array of objects with: description, quantity, pricePerUnitWithoutVat, totalPriceWithoutVat, sku (string, null if not present)).";
         
         Map<String, Object> requestBody = createRequestBody(file, prompt);
         log.info("Sending inventory document '{}' to Gemini for analysis", file.getOriginalFilename());
@@ -86,13 +87,15 @@ public class GeminiService {
     private String getPromptForType(CarpentryDocument.DocumentType type) {
         return switch (type) {
             case INVOICE -> "Extract invoice details from this document. Return ONLY a JSON object with: " +
-                    "supplierName (string), supplierTaxId (string), invoiceId (string), date (string: YYYY-MM-DD), " +
+                    "supplierName (string), supplierTaxId (string), supplierPhone (string, null if not present), supplierEmail (string, null if not present), " +
+                    "documentId (string), date (string: YYYY-MM-DD), " +
                     "totalAmountWithVat (number), totalAmountWithoutVat (number), " +
-                    "items (array of objects with: description, quantity, pricePerUnitWithoutVat, totalPriceWithoutVat).";
+                    "items (array of objects with: description, quantity, pricePerUnitWithoutVat, totalPriceWithoutVat, sku (string, null if not present)).";
             case DELIVERY_NOTE -> "Extract delivery note details from this document. Return ONLY a JSON object with: " +
-                    "supplierName (string), supplierTaxId (string), deliveryNoteId (string), date (string: YYYY-MM-DD), " +
+                    "supplierName (string), supplierTaxId (string), supplierPhone (string, null if not present), supplierEmail (string, null if not present), " +
+                    "documentId (string), date (string: YYYY-MM-DD), " +
                     "totalAmountWithVat (number, null if not present), " +
-                    "items (array of objects with: description, quantity, pricePerUnitWithoutVat, totalPriceWithoutVat).";
+                    "items (array of objects with: description, quantity, pricePerUnitWithoutVat, totalPriceWithoutVat, sku (string, null if not present)).";
             case PAYMENT_CHECK, BANK_TRANSFER -> "Extract payment details from this image or document. " +
                     "Return ONLY a JSON object with: " +
                     "amount (number), method (string: either 'CHEQUE', 'MONEY_TRANSFER'), " +

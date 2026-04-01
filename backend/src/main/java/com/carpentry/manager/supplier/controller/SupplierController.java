@@ -67,4 +67,19 @@ public class SupplierController {
     public ResponseEntity<SupplierResponse> deletePayment(@PathVariable String id, @PathVariable String paymentId) {
         return ResponseEntity.ok(supplierService.deletePayment(id, paymentId));
     }
+
+    @PutMapping("/{id}/invoices/{invoiceId}")
+    public ResponseEntity<SupplierResponse> updateInvoice(
+            @PathVariable String id,
+            @PathVariable String invoiceId,
+            @RequestBody com.carpentry.manager.supplier.model.Supplier.Invoice updatedInvoice) {
+        return ResponseEntity.ok(supplierService.updateInvoice(id, invoiceId, updatedInvoice));
+    }
+
+    @DeleteMapping("/{id}/invoices/{invoiceId}")
+    public ResponseEntity<SupplierResponse> deleteInvoice(
+            @PathVariable String id,
+            @PathVariable String invoiceId) {
+        return ResponseEntity.ok(supplierService.deleteInvoice(id, invoiceId));
+    }
 }
