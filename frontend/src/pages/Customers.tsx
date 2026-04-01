@@ -62,10 +62,10 @@ export default function Customers() {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Typography variant="h4" gutterBottom align="center">
+      <Typography variant="h4" gutterBottom align="right">
         ניהול לקוחות
       </Typography>
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'start', mb: 2 }}>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
@@ -96,9 +96,6 @@ export default function Customers() {
                 </TableCell>
                 <TableCell>{customer.closed ? 'סגור' : 'פתוח'}</TableCell>
                 <TableCell align="right">
-                  <IconButton onClick={() => setSelectedCustomerId(customer.id)}>
-                    <ViewIcon />
-                  </IconButton>
                   <IconButton onClick={() => setSelectedCustomerId(customer.id)} disabled={customer.closed}>
                     <EditIcon />
                   </IconButton>

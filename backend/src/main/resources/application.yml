@@ -12,7 +12,7 @@ server:
 
 app:
   gemini:
-    api-key: ""
+    api-key: ${GEMINI_API_KEY:}
   financial:
     vat-rate: 17.0
   storage:

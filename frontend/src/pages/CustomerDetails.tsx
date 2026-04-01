@@ -123,7 +123,7 @@ export default function CustomerDetails({ id, onBack }: Props) {
     try {
       const response = await customerService.extractPaymentData(file);
       const data = response.data;
-      
+
       setPaymentFormData(prev => ({
         ...prev,
         amount: data.amount || prev.amount,
@@ -498,8 +498,8 @@ export default function CustomerDetails({ id, onBack }: Props) {
                         value={personalData.discount}
                         disabled={customer.closed}
                         onChange={(e) => setPersonalData({ ...personalData, discount: Number(e.target.value) })}
-                        sx={{ 
-                          width: 100, 
+                        sx={{
+                          width: 100,
                           mr: 1,
                           '& .MuiOutlinedInput-root': {
                             '& fieldset': {
@@ -508,8 +508,8 @@ export default function CustomerDetails({ id, onBack }: Props) {
                           },
                         }}
                       />
-                      <IconButton 
-                        onClick={handleSaveCustomer} 
+                      <IconButton
+                        onClick={handleSaveCustomer}
                         disabled={customer.closed || personalData.discount === customer.discount}
                         color={personalData.discount !== customer.discount ? 'error' : 'default'}
                       >
@@ -557,8 +557,8 @@ export default function CustomerDetails({ id, onBack }: Props) {
                     <TableCell>{formatDate(payment.date)}</TableCell>
                     <TableCell>₪{payment.amount.toFixed(2)}</TableCell>
                     <TableCell>
-                      {payment.method === 'CASH' ? 'מזומן' : 
-                       payment.method === 'CHEQUE' ? 'צ\'ק' : 'העברה בנקאית'}
+                      {payment.method === 'CASH' ? 'מזומן' :
+                        payment.method === 'CHEQUE' ? 'צ\'ק' : 'העברה בנקאית'}
                     </TableCell>
                     <TableCell>{payment.remarks}</TableCell>
                     <TableCell sx={{ maxWidth: 300, whiteSpace: 'normal', wordBreak: 'break-word' }}>
@@ -622,37 +622,31 @@ export default function CustomerDetails({ id, onBack }: Props) {
 
       {/* Job Dialog */}
       <Dialog open={jobDialogOpen} onClose={() => setJobDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{editingJobId ? 'עריכת עבודה' : 'הוספת עבודה חדשה'}</DialogTitle>
+        <DialogTitle align='right'>{editingJobId ? 'עריכת עבודה' : 'הוספת עבודה חדשה'}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                label="תיאור הפריט"
-                fullWidth
-                value={jobFormData.itemName}
-                onChange={(e) => setJobFormData({ ...jobFormData, itemName: e.target.value })}
-                sx={{ mt: 1 }}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                label="מחיר"
-                type="number"
-                fullWidth
-                value={jobFormData.price}
-                onChange={(e) => setJobFormData({ ...jobFormData, price: Number(e.target.value) })}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                label="תאריך"
-                type="date"
-                fullWidth
-                value={jobFormData.date}
-                onChange={(e) => setJobFormData({ ...jobFormData, date: e.target.value })}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
+            <TextField
+              label="תיאור העבודה"
+              fullWidth
+              value={jobFormData.itemName}
+              onChange={(e) => setJobFormData({ ...jobFormData, itemName: e.target.value })}
+              sx={{ mt: 1 }}
+            />
+            <TextField
+              label="מחיר"
+              type="number"
+              fullWidth
+              value={jobFormData.price}
+              onChange={(e) => setJobFormData({ ...jobFormData, price: Number(e.target.value) })}
+            />
+            <TextField
+              label="תאריך"
+              type="date"
+              fullWidth
+              value={jobFormData.date}
+              onChange={(e) => setJobFormData({ ...jobFormData, date: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+            />
           </Grid>
         </DialogContent>
         <DialogActions>
@@ -662,13 +656,12 @@ export default function CustomerDetails({ id, onBack }: Props) {
       </Dialog>
 
       {/* Payment Dialog */}
-      <Dialog open={paymentDialogOpen} onClose={() => setPaymentDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{editingPaymentId ? 'עריכת תשלום' : 'הוספת תשלום חדש'}</DialogTitle>
+      <Dialog open={paymentDialogOpen} onClose={() => setPaymentDialogOpen(false)} fullWidth >
+        <DialogTitle align='right'>{editingPaymentId ? 'עריכת תשלום' : 'הוספת תשלום חדש'}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
-          <Grid container spacing={2}>
-            
+          <Grid container direction="row" spacing={2}>
             {!editingPaymentId && (
-              <Grid item xs={12}>
+              <Grid item size={6} xs={6}>
                 <Box
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handlePaymentFileDrop}
@@ -699,104 +692,96 @@ export default function CustomerDetails({ id, onBack }: Props) {
                   ) : paymentFilePreview ? (
                     <Box>
                       {paymentFilePreview === 'PDF' ? (
-                        <Typography variant="h6">מסמך PDF הועלה בהצלחה</Typography>
+                        <Typography dir='rtl' variant="h6">מסמך PDF הועלה בהצלחה</Typography>
                       ) : (
                         <img src={paymentFilePreview} alt="Preview" style={{ maxHeight: 150, maxWidth: '100%', objectFit: 'contain' }} />
                       )}
-                      <Typography variant="body2" sx={{ mt: 1 }}>לחץ או גרור להחלפת קובץ</Typography>
+                      <Typography dir='rtl' variant="body2" sx={{ mt: 1 }}>לחץ או גרור להחלפת קובץ</Typography>
                     </Box>
                   ) : (
                     <Box>
                       <CloudUploadIcon fontSize="large" color="action" />
-                      <Typography sx={{ mt: 1 }}>גרור ושחרר קובץ לכאן או לחץ להעלאה (תמונה או PDF)</Typography>
+                      <Typography dir='rtl' sx={{ mt: 1 }}>גרור ושחרר קובץ לכאן או לחץ להעלאה - תמונה או PDF</Typography>
                     </Box>
                   )}
                 </Box>
               </Grid>
             )}
+            <Grid item xs={12}>
+              <Grid container direction="column" xs={12}>
+                <Grid container direction="row" xs={12} spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="סכום"
+                      type="number"
+                      value={paymentFormData.amount}
+                      onChange={(e) => setPaymentFormData({ ...paymentFormData, amount: Number(e.target.value) })}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      dir='rtl'
+                      label="התקבל בתאריך"
+                      type="date"
 
-            <Grid item xs={12}>
-              <TextField
-                label="סכום"
-                type="number"
-                fullWidth
-                value={paymentFormData.amount}
-                onChange={(e) => setPaymentFormData({ ...paymentFormData, amount: Number(e.target.value) })}
-                sx={{ mt: 1 }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                select
-                label="שיטת תשלום"
-                fullWidth
-                value={paymentFormData.method}
-                onChange={(e) => setPaymentFormData({ ...paymentFormData, method: e.target.value as any })}
-              >
-                <MenuItem value="CASH">מזומן</MenuItem>
-                <MenuItem value="CHEQUE">צ'ק</MenuItem>
-                <MenuItem value="MONEY_TRANSFER">העברה בנקאית</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="תאריך"
-                type="date"
-                fullWidth
-                value={paymentFormData.date}
-                onChange={(e) => setPaymentFormData({ ...paymentFormData, date: e.target.value })}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="הערות"
-                fullWidth
-                multiline
-                rows={2}
-                value={paymentFormData.remarks || ''}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val.length <= 255) {
-                    setPaymentFormData({ ...paymentFormData, remarks: val });
-                  }
-                }}
-                helperText={`${255 - (paymentFormData.remarks?.length || 0)} (/ 255)`}
-              />
-            </Grid>
+                      value={paymentFormData.date}
+                      onChange={(e) => setPaymentFormData({ ...paymentFormData, date: e.target.value })}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                </Grid>
+                <TextField
+                  dir='rtl'
+                  select
+                  label="שיטת תשלום"
+                  fullWidth
+                  value={paymentFormData.method}
+                  onChange={(e) => setPaymentFormData({ ...paymentFormData, method: e.target.value as any })}
+                >
+                  <MenuItem value="CASH" dir='rtl' >מזומן</MenuItem>
+                  <MenuItem value="CHEQUE" dir='rtl'>צ'ק</MenuItem>
+                  <MenuItem value="MONEY_TRANSFER" dir='rtl'>העברה בנקאית</MenuItem>
+                </TextField>
 
-            {paymentFormData.method === 'CHEQUE' && (
-              <>
-                <Grid item xs={12}>
-                  <TextField label="בנק" fullWidth value={paymentFormData.bank || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, bank: e.target.value })} />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField label="סניף" fullWidth value={paymentFormData.branch || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, branch: e.target.value })} />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField label="חשבון" fullWidth value={paymentFormData.account || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, account: e.target.value })} />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField label="מס' צ'ק" fullWidth value={paymentFormData.chequeNumber || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, chequeNumber: e.target.value })} />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    label="תאריך פירעון"
-                    type="date"
-                    fullWidth
-                    value={paymentFormData.dueDate || ''}
-                    onChange={(e) => setPaymentFormData({ ...paymentFormData, dueDate: e.target.value })}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid>
-              </>
-            )}
+                <TextField
+                  dir='rtl'
+                  label="הערות"
+                  fullWidth
+                  value={paymentFormData.remarks || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val.length <= 255) {
+                      setPaymentFormData({ ...paymentFormData, remarks: val });
+                    }
+                  }}
+                  helperText={`${255 - (paymentFormData.remarks?.length || 0)} (/ 255)`}
+                />
 
-            {paymentFormData.method === 'MONEY_TRANSFER' && (
-              <Grid item xs={12}>
-                <TextField label="מספר אסמכתא" fullWidth value={paymentFormData.referenceNumber || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, referenceNumber: e.target.value })} />
+                {paymentFormData.method === 'CHEQUE' && (
+                  <>
+                    <TextField label="בנק" fullWidth value={paymentFormData.bank || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, bank: e.target.value })} />
+                    <TextField label="סניף" fullWidth value={paymentFormData.branch || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, branch: e.target.value })} />
+                    <TextField label="חשבון" fullWidth value={paymentFormData.account || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, account: e.target.value })} />
+                    <TextField label="מס' צ'ק" fullWidth value={paymentFormData.chequeNumber || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, chequeNumber: e.target.value })} />
+                    <TextField
+                      label="תאריך פירעון"
+                      type="date"
+                      fullWidth
+                      value={paymentFormData.dueDate || ''}
+                      onChange={(e) => setPaymentFormData({ ...paymentFormData, dueDate: e.target.value })}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </>
+                )}
+
+                {paymentFormData.method === 'MONEY_TRANSFER' && (
+                  <Grid item xs={12}>
+                    <TextField label="מספר אסמכתא" fullWidth value={paymentFormData.referenceNumber || ''} onChange={(e) => setPaymentFormData({ ...paymentFormData, referenceNumber: e.target.value })} />
+                  </Grid>
+                )}
+
               </Grid>
-            )}
+            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
