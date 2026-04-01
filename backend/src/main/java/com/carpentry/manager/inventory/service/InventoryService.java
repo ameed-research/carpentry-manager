@@ -13,6 +13,7 @@ import com.carpentry.manager.supplier.model.Supplier;
 import com.carpentry.manager.supplier.repository.SupplierRepository;
 import com.carpentry.manager.util.MessagesUtils;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -63,20 +64,9 @@ public class InventoryService {
     }
 
     public ItemResponse updateItem(String id, ItemRequest request) {
-        Item item = itemRepository.findById(id)
-                .orElseThrow(() -> {
-                    String message = messageSource.getMessage("inventory.item.not.found");
-                    return new RuntimeException(message);
-                });
+        Item item = getItemOrThrow(id);
 
-        // Create history record before update
-        InventoryHistory history = InventoryHistory.builder()
-                .itemId(id)
-                .snapshot(copyItem(item))
-                .changeDate(LocalDateTime.now())
-                .changedBy(getCurrentUsername())
-                .build();
-        historyRepository.save(history);
+        createHistoryRecord(item);
 
         // Update item
         itemMapper.updateEntity(request, item);
@@ -86,11 +76,31 @@ public class InventoryService {
         return enrichItemResponse(itemRepository.save(item));
     }
 
+    private @NonNull Item getItemOrThrow(String id) {
+        return itemRepository.findById(id)
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("inventory.item.not.found");
+                    return new RuntimeException(message);
+                });
+    }
+
+    private void createHistoryRecord(Item item) {
+        InventoryHistory history = InventoryHistory.builder()
+                .itemId(item.getId())
+                .snapshot(copyItem(item))
+                .changeDate(LocalDateTime.now())
+                .changedBy(getCurrentUsername())
+                .build();
+        historyRepository.save(history);
+    }
+
     public void deleteItem(String id) {
         if (!itemRepository.existsById(id)) {
             String message = messageSource.getMessage("inventory.item.not.found");
             throw new RuntimeException(message);
         }
+        Item item = getItemOrThrow(id);// Ensure item exists and create history record
+        createHistoryRecord(item);
         itemRepository.deleteById(id);
     }
 

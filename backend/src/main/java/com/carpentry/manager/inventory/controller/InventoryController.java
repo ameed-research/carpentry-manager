@@ -1,12 +1,12 @@
 package com.carpentry.manager.inventory.controller;
 
+import com.carpentry.manager.common.dto.PageResponse;
 import com.carpentry.manager.inventory.dto.ItemRequest;
 import com.carpentry.manager.inventory.dto.ItemResponse;
 import com.carpentry.manager.inventory.model.InventoryHistory;
 import com.carpentry.manager.inventory.service.InventoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,8 +28,8 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @GetMapping
-    public ResponseEntity<Page<ItemResponse>> getAllItems(Pageable pageable) {
-        return ResponseEntity.ok(inventoryService.getAllItems(pageable));
+    public ResponseEntity<PageResponse<ItemResponse>> getAllItems(Pageable pageable) {
+        return ResponseEntity.ok(PageResponse.from(inventoryService.getAllItems(pageable)));
     }
 
     @PostMapping
