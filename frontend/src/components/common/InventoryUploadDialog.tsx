@@ -15,7 +15,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Grid
+  Grid,
+  Checkbox,
+  TextField,
 } from '@mui/material';
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 import { documentService } from '../../services/documentService';
@@ -56,7 +58,17 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess }: Prop
 
     try {
       const response = await documentService.analyzeInventoryDocument(selectedFile);
-      setExtractedData(response.data);
+      const data = response.data;
+      
+      // Initialize selection and items
+      if (data.items && Array.isArray(data.items)) {
+        data.items = data.items.map((item: any) => ({
+          ...item,
+          selected: item.description ? !item.description.includes('משלוח') : true
+        }));
+      }
+
+      setExtractedData(data);
     } catch (err: any) {
       console.error(err);
       setError(err.response?.data?.message || 'שגיאה בניתוח המסמך. ודא שהקובץ תקין.');
@@ -71,7 +83,13 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess }: Prop
     setSaving(true);
     setError(null);
     try {
-      await documentService.approveInventoryDocument(extractedData.dbDocumentId, extractedData);
+      // Filter out unselected items
+      const finalData = {
+        ...extractedData,
+        items: extractedData.items?.filter((item: any) => item.selected) || []
+      };
+
+      await documentService.approveInventoryDocument(finalData.dbDocumentId, finalData);
       onSuccess();
       handleReset();
     } catch (err: any) {
@@ -88,6 +106,13 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess }: Prop
     setAnalyzing(false);
     setSaving(false);
     onClose();
+  };
+
+  const handleItemChange = (index: number, field: string, value: any) => {
+    if (!extractedData) return;
+    const newItems = [...extractedData.items];
+    newItems[index] = { ...newItems[index], [field]: value };
+    setExtractedData({ ...extractedData, items: newItems });
   };
 
   return (
@@ -109,7 +134,11 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess }: Prop
               borderRadius: 2,
               p: 10,
               my: 2,
-              textAlign: 'center',
+              minHeight: 300,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
               cursor: 'pointer',
               bgcolor: 'background.default',
               '&:hover': { bgcolor: 'action.hover' }
@@ -122,9 +151,12 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess }: Prop
               accept="image/*,application/pdf"
               onChange={handleFileInput}
             />
-            <CloudUploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
-              גרור ושחרר קובץ לכאן, או לחץ כדי לבחור (PDF / תמונות)
+            <CloudUploadIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h5" color="text.secondary">
+              גרור ושחרר קובץ לכאן
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+              או לחץ כדי לבחור (PDF / תמונות)
             </Typography>
           </Box>
         )}
@@ -175,6 +207,7 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess }: Prop
               <Table size="small">
                 <TableHead>
                   <TableRow>
+                    <TableCell padding="checkbox"></TableCell>
                     <TableCell>תיאור פריט</TableCell>
                     <TableCell>כמות</TableCell>
                     <TableCell>מחיר ליחידה (ללא מע"מ)</TableCell>
@@ -183,16 +216,53 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess }: Prop
                 </TableHead>
                 <TableBody>
                   {extractedData.items?.map((item: any, idx: number) => (
-                    <TableRow key={idx}>
-                      <TableCell>{item.description}</TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                      <TableCell>₪{item.pricePerUnitWithoutVat}</TableCell>
-                      <TableCell>₪{item.totalPriceWithoutVat}</TableCell>
+                    <TableRow key={idx} selected={item.selected}>
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          checked={!!item.selected}
+                          onChange={(e) => handleItemChange(idx, 'selected', e.target.checked)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={item.description || ''}
+                          onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          size="small"
+                          type="number"
+                          value={item.quantity || ''}
+                          onChange={(e) => handleItemChange(idx, 'quantity', Number(e.target.value))}
+                          sx={{ width: 80 }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          size="small"
+                          type="number"
+                          value={item.pricePerUnitWithoutVat || ''}
+                          onChange={(e) => handleItemChange(idx, 'pricePerUnitWithoutVat', Number(e.target.value))}
+                          sx={{ width: 100 }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          size="small"
+                          type="number"
+                          value={item.totalPriceWithoutVat || ''}
+                          onChange={(e) => handleItemChange(idx, 'totalPriceWithoutVat', Number(e.target.value))}
+                          sx={{ width: 100 }}
+                        />
+                      </TableCell>
                     </TableRow>
                   ))}
                   {(!extractedData.items || extractedData.items.length === 0) && (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">לא זוהו פריטים</TableCell>
+                      <TableCell colSpan={5} align="center">לא זוהו פריטים</TableCell>
                     </TableRow>
                   )}
                 </TableBody>

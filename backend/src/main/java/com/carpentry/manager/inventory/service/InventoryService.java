@@ -1,7 +1,5 @@
 package com.carpentry.manager.inventory.service;
 
-import com.carpentry.manager.category.model.Category;
-import com.carpentry.manager.category.repository.CategoryRepository;
 import com.carpentry.manager.inventory.dto.ItemRequest;
 import com.carpentry.manager.inventory.dto.ItemResponse;
 import com.carpentry.manager.inventory.mapper.ItemMapper;
@@ -32,7 +30,6 @@ public class InventoryService {
 
     private final ItemRepository itemRepository;
     private final InventoryHistoryRepository historyRepository;
-    private final CategoryRepository categoryRepository;
     private final SupplierRepository supplierRepository;
     private final ItemMapper itemMapper;
     private final MessagesUtils messageSource;
@@ -42,21 +39,12 @@ public class InventoryService {
     }
 
     public ItemResponse createItem(ItemRequest request) {
-        String categoryId = request.getCategoryId();
-        if (categoryId == null || categoryId.isBlank()) {
-            String defaultCategoryName = messageSource.getMessage("inventory.category.default");
-            categoryId = categoryRepository.findByName(defaultCategoryName)
-                    .map(Category::getId)
-                    .orElseThrow(() -> new RuntimeException(messageSource.getMessage("inventory.category.default.not.found")));
-        }
-
         Optional<Supplier> supplier = supplierRepository.findById(request.getSupplierId());
         if (supplier.isEmpty()) {
             throw new RuntimeException(messageSource.getMessage("supplier.not.found"));
         }
 
         Item item = itemMapper.toEntity(request);
-        item.setCategoryId(categoryId);
         item.setUpdatedBy(getCurrentUsername());
         item.setVersion(0);
 
@@ -111,9 +99,6 @@ public class InventoryService {
     private ItemResponse enrichItemResponse(Item item) {
         ItemResponse response = itemMapper.toResponse(item);
 
-        categoryRepository.findById(item.getCategoryId())
-                .ifPresent(c -> response.setCategoryName(c.getName()));
-
         supplierRepository.findById(item.getSupplierId())
                 .ifPresent(s -> response.setSupplierName(s.getName()));
 
@@ -128,7 +113,6 @@ public class InventoryService {
         return Item.builder()
                 .id(source.getId())
                 .name(source.getName())
-                .categoryId(source.getCategoryId())
                 .quantity(source.getQuantity())
                 .priceExcludingVAT(source.getPriceExcludingVAT())
                 .supplierId(source.getSupplierId())

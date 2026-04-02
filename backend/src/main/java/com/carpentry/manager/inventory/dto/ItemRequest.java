@@ -21,8 +21,6 @@ public class ItemRequest {
     @Size(max = 150, message = "{inventory.item.name.max.size}")
     private String name;
 
-    private String categoryId; // Default to "כללי" if null
-
     @NotNull(message = "{inventory.item.quantity.required}")
     @Min(value = 0, message = "{inventory.item.quantity.min}")
     private Integer quantity;

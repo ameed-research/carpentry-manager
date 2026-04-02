@@ -10,7 +10,6 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface ItemMapper {
 
-    @Mapping(target = "categoryName", ignore = true)
     @Mapping(target = "supplierName", ignore = true)
     ItemResponse toResponse(Item item);
 

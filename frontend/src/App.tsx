@@ -5,7 +5,6 @@ import type { RootState } from './store';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
-import Categories from './pages/Categories';
 import Customers from './pages/Customers';
 import Suppliers from './pages/Suppliers';
 import Expenses from './pages/Expenses';
@@ -37,7 +36,6 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/inventory" element={<Inventory />} />
-                  <Route path="/categories" element={<Categories />} />
                   <Route path="/customers" element={<Customers />} />
                   <Route path="/suppliers" element={<Suppliers />} />
                   <Route path="/expenses" element={<Expenses />} />

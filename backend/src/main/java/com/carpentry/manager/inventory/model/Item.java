@@ -24,8 +24,6 @@ public class Item {
 
     private String name;
 
-    private String categoryId;
-
     private Integer quantity;
 
     private Double priceExcludingVAT;

@@ -30,8 +30,6 @@ import {
 } from '@mui/icons-material';
 import { inventoryService } from '../services/inventoryService';
 import type { Item } from '../services/inventoryService';
-import { categoryService } from '../services/categoryService';
-import type { Category } from '../services/categoryService';
 import { supplierService } from '../services/supplierService';
 import type { Supplier } from '../services/supplierService';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -45,7 +43,6 @@ export default function Inventory() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filter, setFilter] = useState('');
 
-  const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
   const [open, setOpen] = useState(false);
@@ -74,19 +71,14 @@ export default function Inventory() {
   };
 
   const loadLookups = async () => {
-    const [catRes, supRes] = await Promise.all([
-      categoryService.getAll(),
-      supplierService.getAll(),
-    ]);
-    setCategories(catRes.data);
-    setSuppliers(supRes.data);
+    const res = await supplierService.getAll();
+    setSuppliers(res.data);
   };
 
   const filteredItems = useMemo(() => {
     if (!filter) return items;
     return items.filter((item) =>
       item.name.toLowerCase().includes(filter.toLowerCase()) ||
-      item.categoryName?.toLowerCase().includes(filter.toLowerCase()) ||
       item.supplierName?.toLowerCase().includes(filter.toLowerCase()) ||
       item.sku?.toLowerCase().includes(filter.toLowerCase())
     );
@@ -96,7 +88,6 @@ export default function Inventory() {
     const newErrors: Record<string, string> = {};
     if (!formData.name) newErrors.name = 'שם הפריט הוא חובה';
     if (formData.name && formData.name.length > 150) newErrors.name = 'שם הפריט חייב להיות עד 150 תווים';
-    if (!formData.categoryId) newErrors.categoryId = 'קטגוריה היא חובה';
     if (formData.quantity === undefined || formData.quantity < 0) newErrors.quantity = 'כמות חייבת להיות 0 ומעלה';
     if (formData.priceExcludingVAT === undefined || formData.priceExcludingVAT < 0) newErrors.priceExcludingVAT = 'מחיר חייב להיות 0 ומעלה';
     if (!formData.supplierId) newErrors.supplierId = 'ספק הוא חובה';
@@ -114,7 +105,6 @@ export default function Inventory() {
       setEditingItem(null);
       setFormData({
         name: '',
-        categoryId: categories.find(c => c.name === 'כללי')?.id || '',
         quantity: 0,
         priceExcludingVAT: 0,
         supplierId: '',
@@ -207,7 +197,6 @@ export default function Inventory() {
           <TableHead>
             <TableRow>
               <TableCell>שם הפריט</TableCell>
-              <TableCell>קטגוריה</TableCell>
               <TableCell>כמות</TableCell>
               <TableCell>מחיר (ללא מע"מ)</TableCell>
               <TableCell>ספק</TableCell>
@@ -219,7 +208,6 @@ export default function Inventory() {
             {filteredItems.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{item.name}</TableCell>
-                <TableCell>{item.categoryName}</TableCell>
                 <TableCell>{item.quantity}</TableCell>
                 <TableCell>₪{item.priceExcludingVAT.toFixed(2)}</TableCell>
                 <TableCell>{item.supplierName}</TableCell>
@@ -241,7 +229,7 @@ export default function Inventory() {
             ))}
             {filteredItems.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} align="center">אין פריטים במלאי</TableCell>
+                <TableCell colSpan={6} align="center">אין פריטים במלאי</TableCell>
               </TableRow>
             )}
           </TableBody>
@@ -276,25 +264,6 @@ export default function Inventory() {
                 error={!!errors.name}
                 helperText={errors.name}
               />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                select
-                name="categoryId"
-                label="קטגוריה"
-                fullWidth
-                required
-                value={formData.categoryId || ''}
-                onChange={handleChange}
-                error={!!errors.categoryId}
-                helperText={errors.categoryId}
-              >
-                {categories.map((cat) => (
-                  <MenuItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </MenuItem>
-                ))}
-              </TextField>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField

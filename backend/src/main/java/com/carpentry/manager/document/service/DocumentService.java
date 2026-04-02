@@ -1,8 +1,6 @@
 package com.carpentry.manager.document.service;
 
 import com.carpentry.manager.ai.service.GeminiService;
-import com.carpentry.manager.category.model.Category;
-import com.carpentry.manager.category.repository.CategoryRepository;
 import com.carpentry.manager.document.model.CarpentryDocument;
 import com.carpentry.manager.document.repository.DocumentRepository;
 import com.carpentry.manager.inventory.model.InventoryHistory;
@@ -45,7 +43,6 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final ItemRepository itemRepository;
     private final InventoryHistoryRepository historyRepository;
-    private final CategoryRepository categoryRepository;
     private final SupplierRepository supplierRepository;
     private final SupplierService supplierService;
     private final NotificationService notificationService;
@@ -261,8 +258,6 @@ public class DocumentService {
 
         String documentNumber = (String) data.get("documentId");
         String username = getCurrentUsername();
-        String defaultCategoryId = categoryRepository.findByName("כללי")
-                .map(Category::getId).orElse(null);
 
         for (Map<String, Object> itemData : items) {
             String description = (String) itemData.get("description");
@@ -301,7 +296,6 @@ public class DocumentService {
                                         .name(description)
                                         .quantity(quantity.intValue())
                                         .priceExcludingVAT(price)
-                                        .categoryId(defaultCategoryId)
                                         .sourceDocumentId(document.getId())
                                         .documentNumber(documentNumber)
                                         .supplierId(supplierId)
@@ -395,7 +389,6 @@ public class DocumentService {
         return Item.builder()
                 .id(source.getId())
                 .name(source.getName())
-                .categoryId(source.getCategoryId())
                 .quantity(source.getQuantity())
                 .priceExcludingVAT(source.getPriceExcludingVAT())
                 .supplierId(source.getSupplierId())

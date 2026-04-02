@@ -16,8 +16,6 @@ import java.time.LocalDateTime;
 public class ItemResponse {
     private String id;
     private String name;
-    private String categoryId;
-    private String categoryName;
     private Integer quantity;
     private Double priceExcludingVAT;
     private String supplierId;

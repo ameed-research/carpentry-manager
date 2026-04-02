@@ -4,8 +4,6 @@ import type { InventoryHistory } from '../types';
 export interface Item {
   id: string;
   name: string;
-  categoryId: string;
-  categoryName?: string;
   quantity: number;
   priceExcludingVAT: number;
   supplierId: string;
