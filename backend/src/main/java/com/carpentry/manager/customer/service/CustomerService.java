@@ -2,6 +2,7 @@ package com.carpentry.manager.customer.service;
 
 import com.carpentry.manager.customer.dto.CustomerRequest;
 import com.carpentry.manager.customer.dto.CustomerResponse;
+import com.carpentry.manager.customer.dto.CustomerSummaryResponse;
 import com.carpentry.manager.customer.mapper.CustomerMapper;
 import com.carpentry.manager.customer.model.Customer;
 import com.carpentry.manager.customer.repository.CustomerRepository;
@@ -21,10 +22,29 @@ public class CustomerService {
     private final CustomerMapper customerMapper;
     private final MessagesUtils messagesUtils;
 
-    public List<CustomerResponse> getAllCustomers() {
+    public List<CustomerSummaryResponse> getAllCustomers() {
         return customerRepository.findAll().stream()
-                .map(this::enrichCustomerResponse)
+                .map(this::toCustomerSummary)
                 .toList();
+    }
+
+    private CustomerSummaryResponse toCustomerSummary(Customer customer) {
+        java.math.BigDecimal totalAmount = customer.getJobs().stream()
+                .map(Customer.Job::getPrice)
+                .filter(java.util.Objects::nonNull)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        java.math.BigDecimal totalPaid = customer.getPayments().stream()
+                .map(Customer.Payment::getAmount)
+                .filter(java.util.Objects::nonNull)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        java.math.BigDecimal discount = customer.getDiscount() != null ? customer.getDiscount() : java.math.BigDecimal.ZERO;
+        return CustomerSummaryResponse.builder()
+                .id(customer.getId())
+                .name(customer.getName())
+                .phone(customer.getPhone())
+                .debt(totalAmount.subtract(totalPaid).subtract(discount))
+                .closed(customer.isClosed())
+                .build();
     }
 
     public CustomerResponse getCustomerById(String id) {

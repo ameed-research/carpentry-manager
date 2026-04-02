@@ -32,9 +32,7 @@ import {
   CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
 import { inventoryService } from '../services/inventoryService';
-import type { Item } from '../services/inventoryService';
-import { supplierService } from '../services/supplierService';
-import type { Supplier } from '../services/supplierService';
+import type { Item, SupplierOption } from '../services/inventoryService';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import InventoryUploadDialog from '../components/common/InventoryUploadDialog';
 import type { InventoryHistory } from '../types';
@@ -47,7 +45,7 @@ export default function Inventory() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filter, setFilter] = useState('');
 
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
 
   const [open, setOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -61,22 +59,17 @@ export default function Inventory() {
 
   useEffect(() => {
     loadData();
-    loadLookups();
   }, [page, rowsPerPage]);
 
   const loadData = async () => {
     try {
       const response = await inventoryService.getAll(page, rowsPerPage);
-      setItems(response.data.content);
-      setTotalElements(response.data.totalElements);
+      setItems(response.data.page.content);
+      setTotalElements(response.data.page.totalElements);
+      setSuppliers(response.data.suppliers);
     } catch (error) {
       console.error('Error loading items', error);
     }
-  };
-
-  const loadLookups = async () => {
-    const res = await supplierService.getAll();
-    setSuppliers(res.data);
   };
 
   const filteredItems = useMemo(() => {
@@ -246,7 +239,7 @@ export default function Inventory() {
                   <Link
                     component="button"
                     underline="hover"
-                    onClick={() => navigate('/suppliers')}
+                    onClick={() => navigate('/suppliers', { state: { openSupplierId: item.supplierId } })}
                   >
                     {item.supplierName}
                   </Link>

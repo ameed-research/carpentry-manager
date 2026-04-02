@@ -16,11 +16,7 @@ public class DashboardService {
 
     public DashboardStats getStats() {
         long totalItems = itemRepository.count();
-
-        // Low stock items as "Open Orders" proxy
-        long lowStockCount = itemRepository.findAll().stream()
-                .filter(i -> i.getQuantity() < 5)
-                .count();
+        long activeCustomers = customerRepository.countByClosedFalse();
 
         java.math.BigDecimal totalDebt = customerRepository.findAll().stream()
                 .map(this::calculateDebt)
@@ -28,7 +24,7 @@ public class DashboardService {
 
         return DashboardStats.builder()
                 .totalItems(totalItems)
-                .openOrders(lowStockCount)
+                .activeCustomers(activeCustomers)
                 .totalCustomerDebt(totalDebt)
                 .build();
     }

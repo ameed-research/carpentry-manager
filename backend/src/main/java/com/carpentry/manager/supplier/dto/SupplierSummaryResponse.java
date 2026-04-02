@@ -1,6 +1,5 @@
 package com.carpentry.manager.supplier.dto;
 
-import com.carpentry.manager.supplier.model.Supplier;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,23 +7,16 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SupplierResponse {
+public class SupplierSummaryResponse {
     private String id;
     private String name;
-    private String phone;
-    private String taxId;
     private String contactPerson;
-    private String contactPhone;
-    private String email;
-    private List<Supplier.Payment> payments;
-    private List<Supplier.Invoice> invoices;
-    private List<Supplier.DeliveryNote> deliveryNotes;
+    private String phone;
     private BigDecimal balance;
 }

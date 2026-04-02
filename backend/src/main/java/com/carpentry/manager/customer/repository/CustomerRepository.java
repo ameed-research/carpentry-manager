@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface CustomerRepository extends MongoRepository<Customer, String> {
     Optional<Customer> findByName(String name);
+    long countByClosedFalse();
 }

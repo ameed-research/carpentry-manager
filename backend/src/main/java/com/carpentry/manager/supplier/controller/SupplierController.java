@@ -2,6 +2,7 @@ package com.carpentry.manager.supplier.controller;
 
 import com.carpentry.manager.supplier.dto.SupplierRequest;
 import com.carpentry.manager.supplier.dto.SupplierResponse;
+import com.carpentry.manager.supplier.dto.SupplierSummaryResponse;
 import com.carpentry.manager.supplier.service.SupplierService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,7 @@ public class SupplierController {
     private final SupplierService supplierService;
 
     @GetMapping
-    public ResponseEntity<List<SupplierResponse>> getAllSuppliers() {
+    public ResponseEntity<List<SupplierSummaryResponse>> getAllSuppliers() {
         return ResponseEntity.ok(supplierService.getAllSuppliers());
     }
 

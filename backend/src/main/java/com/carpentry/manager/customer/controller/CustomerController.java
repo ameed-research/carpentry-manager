@@ -2,6 +2,7 @@ package com.carpentry.manager.customer.controller;
 
 import com.carpentry.manager.customer.dto.CustomerRequest;
 import com.carpentry.manager.customer.dto.CustomerResponse;
+import com.carpentry.manager.customer.dto.CustomerSummaryResponse;
 import com.carpentry.manager.customer.model.Customer;
 import com.carpentry.manager.customer.service.CustomerService;
 import jakarta.validation.Valid;
@@ -26,7 +27,7 @@ public class CustomerController {
     private final CustomerService customerService;
 
     @GetMapping
-    public ResponseEntity<List<CustomerResponse>> getAllCustomers() {
+    public ResponseEntity<List<CustomerSummaryResponse>> getAllCustomers() {
         return ResponseEntity.ok(customerService.getAllCustomers());
     }
 

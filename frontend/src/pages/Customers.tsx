@@ -18,13 +18,13 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 import { customerService } from '../services/customerService';
-import type { Customer } from '../services/customerService';
+import type { CustomerSummary } from '../services/customerService';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import CustomerDetails from './CustomerDetails';
 import { formatPrice } from '../utils/formatPrice';
 
 export default function Customers() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 

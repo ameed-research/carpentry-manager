@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Typography,
   Paper,
@@ -14,20 +15,29 @@ import {
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 import { supplierService } from '../services/supplierService';
-import type { Supplier } from '../services/supplierService';
+import type { SupplierSummary } from '../services/supplierService';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import SupplierDetails from './SupplierDetails';
 import { formatPrice } from '../utils/formatPrice';
 
 export default function Suppliers() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const location = useLocation();
+  const [suppliers, setSuppliers] = useState<SupplierSummary[]>([]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
-  const [selectedSupplierData, setSelectedSupplierData] = useState<Supplier | null>(null);
+  const autoOpenHandled = useRef(false);
 
   useEffect(() => {
     loadSuppliers();
   }, []);
+
+  useEffect(() => {
+    const openSupplierId = location.state?.openSupplierId;
+    if (openSupplierId && suppliers.length > 0 && !autoOpenHandled.current) {
+      autoOpenHandled.current = true;
+      setSelectedSupplierId(openSupplierId);
+    }
+  }, [suppliers, location.state]);
 
   const loadSuppliers = async () => {
     try {
@@ -52,14 +62,12 @@ export default function Suppliers() {
 
   if (selectedSupplierId) {
     return (
-      <SupplierDetails 
-        id={selectedSupplierId} 
-        supplierData={selectedSupplierData}
+      <SupplierDetails
+        id={selectedSupplierId}
         onBack={() => {
           setSelectedSupplierId(null);
-          setSelectedSupplierData(null);
           loadSuppliers();
-        }} 
+        }}
       />
     );
   }
@@ -73,10 +81,7 @@ export default function Suppliers() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => {
-            setSelectedSupplierId('new');
-            setSelectedSupplierData(null);
-          }}
+          onClick={() => setSelectedSupplierId('new')}
         >
           הוסף ספק
         </Button>
@@ -103,10 +108,7 @@ export default function Suppliers() {
                   {formatPrice(supplier.balance || 0)}
                 </TableCell>
                 <TableCell align="right">
-                  <IconButton onClick={() => {
-                    setSelectedSupplierId(supplier.id);
-                    setSelectedSupplierData(supplier);
-                  }}>
+                  <IconButton onClick={() => setSelectedSupplierId(supplier.id)}>
                     <EditIcon />
                   </IconButton>
                   <IconButton onClick={() => setDeleteId(supplier.id)}>

@@ -19,24 +19,30 @@ export interface DeliveryNote {
   uploadDate: string;
 }
 
+export interface SupplierSummary {
+  id: string;
+  name: string;
+  contactPerson?: string;
+  phone: string;
+  balance: number;
+}
+
 export interface Supplier {
   id: string;
   name: string;
   phone: string;
+  balance: number;
   taxId?: string;
   contactPerson?: string;
   contactPhone?: string;
   email?: string;
-  payments: PaymentData[];
+  payments?: PaymentData[];
   invoices?: Invoice[];
   deliveryNotes?: DeliveryNote[];
-  totalPaid: number;
-  balance: number;
-  debt: number;
 }
 
 export const supplierService = {
-  getAll: () => api.get<Supplier[]>('/suppliers'),
+  getAll: () => api.get<SupplierSummary[]>('/suppliers'),
   getById: (id: string) => api.get<Supplier>(`/suppliers/${id}`),
   create: (data: Partial<Supplier>) => api.post<Supplier>('/suppliers', data),
   update: (id: string, data: Partial<Supplier>) => api.put<Supplier>(`/suppliers/${id}`, data),

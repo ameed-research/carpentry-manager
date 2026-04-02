@@ -23,9 +23,19 @@ export interface Page<T> {
   number: number;
 }
 
+export interface SupplierOption {
+  id: string;
+  name: string;
+}
+
+export interface InventoryListResponse {
+  page: Page<Item>;
+  suppliers: SupplierOption[];
+}
+
 export const inventoryService = {
-  getAll: (page: number = 0, size: number = 10) => 
-    api.get<Page<Item>>(`/inventory?page=${page}&size=${size}`),
+  getAll: (page: number = 0, size: number = 10) =>
+    api.get<InventoryListResponse>(`/inventory?page=${page}&size=${size}`),
   create: (data: Partial<Item>) => api.post<Item>('/inventory', data),
   update: (id: string, data: Partial<Item>) => api.put<Item>(`/inventory/${id}`, data),
   delete: (id: string) => api.delete(`/inventory/${id}`),

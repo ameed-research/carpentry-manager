@@ -1,6 +1,6 @@
 package com.carpentry.manager.inventory.controller;
 
-import com.carpentry.manager.common.dto.PageResponse;
+import com.carpentry.manager.inventory.dto.InventoryListResponse;
 import com.carpentry.manager.inventory.dto.ItemRequest;
 import com.carpentry.manager.inventory.dto.ItemResponse;
 import com.carpentry.manager.inventory.model.InventoryHistory;
@@ -28,8 +28,8 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @GetMapping
-    public ResponseEntity<PageResponse<ItemResponse>> getAllItems(Pageable pageable) {
-        return ResponseEntity.ok(PageResponse.from(inventoryService.getAllItems(pageable)));
+    public ResponseEntity<InventoryListResponse> getAllItems(Pageable pageable) {
+        return ResponseEntity.ok(inventoryService.getAllItems(pageable));
     }
 
     @PostMapping

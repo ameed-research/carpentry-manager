@@ -22,6 +22,14 @@ export interface Payment {
   referenceNumber?: string;
 }
 
+export interface CustomerSummary {
+  id: string;
+  name: string;
+  phone: string;
+  debt: number;
+  closed: boolean;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -38,7 +46,7 @@ export interface Customer {
 }
 
 export const customerService = {
-  getAll: () => api.get<Customer[]>('/customers'),
+  getAll: () => api.get<CustomerSummary[]>('/customers'),
   getById: (id: string) => api.get<Customer>(`/customers/${id}`),
   create: (data: Partial<Customer>) => api.post<Customer>('/customers', data),
   update: (id: string, data: Partial<Customer>) => api.put<Customer>(`/customers/${id}`, data),

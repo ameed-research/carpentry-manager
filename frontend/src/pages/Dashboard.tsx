@@ -5,7 +5,7 @@ import { formatPrice } from '../utils/formatPrice';
 
 interface Stats {
   totalItems: number;
-  openOrders: number;
+  activeCustomers: number;
   totalCustomerDebt: number;
 }
 
@@ -48,8 +48,8 @@ export default function Dashboard() {
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column', textAlign: 'center' }}>
-            <Typography variant="h6" color="textSecondary">פריטים במלאי נמוך</Typography>
-            <Typography variant="h3">{stats?.openOrders ?? 0}</Typography>
+            <Typography variant="h6" color="textSecondary">לקוחות פעילים</Typography>
+            <Typography variant="h3">{stats?.activeCustomers ?? 0}</Typography>
           </Paper>
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>

@@ -1,5 +1,7 @@
 package com.carpentry.manager.inventory.service;
 
+import com.carpentry.manager.common.dto.PageResponse;
+import com.carpentry.manager.inventory.dto.InventoryListResponse;
 import com.carpentry.manager.inventory.dto.ItemRequest;
 import com.carpentry.manager.inventory.dto.ItemResponse;
 import com.carpentry.manager.inventory.mapper.ItemMapper;
@@ -21,7 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,8 +38,25 @@ public class InventoryService {
     private final ItemMapper itemMapper;
     private final MessagesUtils messageSource;
 
-    public Page<ItemResponse> getAllItems(Pageable pageable) {
-        return itemRepository.findAll(pageable).map(this::enrichItemResponse);
+    public InventoryListResponse getAllItems(Pageable pageable) {
+        List<Supplier> allSuppliers = supplierRepository.findAll();
+        Map<String, String> supplierNames = allSuppliers.stream()
+                .collect(Collectors.toMap(Supplier::getId, Supplier::getName));
+
+        Page<ItemResponse> itemPage = itemRepository.findAll(pageable).map(item -> {
+            ItemResponse response = itemMapper.toResponse(item);
+            response.setSupplierName(supplierNames.get(item.getSupplierId()));
+            return response;
+        });
+
+        List<InventoryListResponse.SupplierOption> supplierOptions = allSuppliers.stream()
+                .map(s -> new InventoryListResponse.SupplierOption(s.getId(), s.getName()))
+                .toList();
+
+        return InventoryListResponse.builder()
+                .page(PageResponse.from(itemPage))
+                .suppliers(supplierOptions)
+                .build();
     }
 
     public ItemResponse createItem(ItemRequest request) {

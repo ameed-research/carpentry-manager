@@ -11,6 +11,6 @@ import java.math.BigDecimal;
 @Builder
 public class DashboardStats {
     private long totalItems;
-    private long openOrders; // Logic: Items with low stock (e.g., < 5)
+    private long activeCustomers;
     private BigDecimal totalCustomerDebt;
 }

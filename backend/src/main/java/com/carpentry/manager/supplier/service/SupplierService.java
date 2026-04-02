@@ -2,6 +2,7 @@ package com.carpentry.manager.supplier.service;
 
 import com.carpentry.manager.supplier.dto.SupplierRequest;
 import com.carpentry.manager.supplier.dto.SupplierResponse;
+import com.carpentry.manager.supplier.dto.SupplierSummaryResponse;
 import com.carpentry.manager.supplier.mapper.SupplierMapper;
 import com.carpentry.manager.supplier.model.Supplier;
 import com.carpentry.manager.supplier.repository.SupplierRepository;
@@ -25,9 +26,15 @@ public class SupplierService {
     private final SupplierMapper supplierMapper;
     private final MessagesUtils messageSource;
 
-    public List<SupplierResponse> getAllSuppliers() {
+    public List<SupplierSummaryResponse> getAllSuppliers() {
         return supplierRepository.findAll().stream()
-                .map(s -> enrichSupplierResponse(s, false))
+                .map(s -> SupplierSummaryResponse.builder()
+                        .id(s.getId())
+                        .name(s.getName())
+                        .contactPerson(s.getContactPerson())
+                        .phone(s.getPhone())
+                        .balance(s.getBalance() != null ? s.getBalance() : BigDecimal.ZERO)
+                        .build())
                 .toList();
     }
 
@@ -255,29 +262,12 @@ public class SupplierService {
 
     private SupplierResponse enrichSupplierResponse(Supplier supplier, boolean includeDetails) {
         SupplierResponse response = supplierMapper.toResponse(supplier);
-
-        BigDecimal totalPaid = BigDecimal.ZERO;
-        if (supplier.getPayments() != null) {
-            totalPaid = supplier.getPayments().stream()
-                    .filter(p -> p.getAmount() != null)
-                    .map(Supplier.Payment::getAmount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-        }
-
-        response.setTotalPaid(totalPaid);
         response.setBalance(supplier.getBalance() != null ? supplier.getBalance() : BigDecimal.ZERO);
-        response.setDebt(supplier.getBalance() != null ? supplier.getBalance().negate() : BigDecimal.ZERO);
-
         if (includeDetails) {
             response.setPayments(supplier.getPayments() != null ? supplier.getPayments() : new ArrayList<>());
             response.setInvoices(supplier.getInvoices() != null ? supplier.getInvoices() : new ArrayList<>());
             response.setDeliveryNotes(supplier.getDeliveryNotes() != null ? supplier.getDeliveryNotes() : new ArrayList<>());
-        } else {
-            response.setPayments(null);
-            response.setInvoices(null);
-            response.setDeliveryNotes(null);
         }
-
         return response;
     }
 }
