@@ -9,6 +9,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +43,7 @@ public class Supplier {
     private List<Payment> payments = new ArrayList<>();
 
     @Builder.Default
-    private Double balance = 0.0;
+    private BigDecimal balance = BigDecimal.ZERO;
 
     @Builder.Default
     private List<Invoice> invoices = new ArrayList<>();
@@ -63,7 +64,7 @@ public class Supplier {
         @Builder.Default
         private String id = UUID.randomUUID().toString();
         private LocalDate date;
-        private Double amount;
+        private BigDecimal amount;
         private PaymentMethod method;
         private String remarks;
         private String sourceDocumentId;
@@ -85,7 +86,7 @@ public class Supplier {
         @Builder.Default
         private String id = UUID.randomUUID().toString();
         private String invoiceId; // The ID from the actual document
-        private Double totalAmount; // Including VAT
+        private BigDecimal totalAmount; // Including VAT
         private String sourceDocumentId;
         private LocalDate invoiceDate;
         private LocalDate uploadDate;
@@ -100,7 +101,7 @@ public class Supplier {
         @Builder.Default
         private String id = UUID.randomUUID().toString();
         private String deliveryNoteId; // The ID from the actual document
-        private Double totalAmount; // Including VAT (optional)
+        private BigDecimal totalAmount; // Including VAT (optional)
         private String sourceDocumentId;
         private LocalDate deliveryNoteDate;
         private LocalDate uploadDate;

@@ -26,10 +26,12 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { supplierService } from '../services/supplierService';
-import type { Supplier, Invoice } from '../services/supplierService';
+import type { Supplier, Invoice, DeliveryNote } from '../services/supplierService';
 import PaymentDialog from '../components/common/PaymentDialog';
 import type { PaymentData } from '../components/common/PaymentDialog';
 import InvoiceDialog from '../components/common/InvoiceDialog';
+import DeliveryNoteDialog from '../components/common/DeliveryNoteDialog';
+import InventoryUploadDialog from '../components/common/InventoryUploadDialog';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { documentService } from '../services/documentService';
 
@@ -73,6 +75,12 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
+
+  const [dnDialogOpen, setDnDialogOpen] = useState(false);
+  const [editingDn, setEditingDn] = useState<DeliveryNote | null>(null);
+  const [deleteDnId, setDeleteDnId] = useState<string | null>(null);
+
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   useEffect(() => {
     if (isNew) {
@@ -172,8 +180,8 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
     setPaymentDialogOpen(true);
   };
 
-  const openInvoiceDialog = (invoice: Invoice) => {
-    setEditingInvoice(invoice);
+  const openInvoiceDialog = (invoice?: Invoice) => {
+    setEditingInvoice(invoice || null);
     setInvoiceDialogOpen(true);
   };
 
@@ -181,6 +189,8 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
     try {
       if (editingInvoice && editingInvoice.id) {
         await supplierService.updateInvoice(supplier!.id, editingInvoice.id, invoice);
+      } else {
+        await supplierService.addInvoice(supplier!.id, invoice);
       }
       setInvoiceDialogOpen(false);
       loadSupplier();
@@ -201,14 +211,67 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
     }
   };
 
+  const openDnDialog = (dn?: DeliveryNote) => {
+    setEditingDn(dn || null);
+    setDnDialogOpen(true);
+  };
+
+  const handleSaveDn = async (dn: DeliveryNote) => {
+    try {
+      if (editingDn && editingDn.id) {
+        await supplierService.updateDeliveryNote(supplier!.id, editingDn.id, dn);
+      } else {
+        await supplierService.addDeliveryNote(supplier!.id, dn);
+      }
+      setDnDialogOpen(false);
+      loadSupplier();
+    } catch (error) {
+      console.error('Error saving delivery note', error);
+    }
+  };
+
+  const handleDeleteDn = async () => {
+    if (deleteDnId) {
+      try {
+        await supplierService.deleteDeliveryNote(supplier!.id, deleteDnId);
+        setDeleteDnId(null);
+        loadSupplier();
+      } catch (error) {
+        console.error('Error deleting delivery note', error);
+      }
+    }
+  };
+
   const handleDownloadDocument = (docId: string) => {
     window.open(documentService.getDownloadUrl(docId), '_blank');
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (isNew) return;
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setUploadDialogOpen(true);
+      // Hack to pass the file after a tiny delay so dialog mounts
+      setTimeout(() => {
+        const dialogInput = document.getElementById('inventory-upload-input') as HTMLInputElement;
+        if (dialogInput) {
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(e.dataTransfer.files[0]);
+          dialogInput.files = dataTransfer.files;
+          dialogInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }, 300);
+    }
   };
 
   if (!supplier && !isNew) return <Typography>טוען...</Typography>;
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: '100%' }} onDragOver={handleDragOver} onDrop={handleDrop}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, width: '100%' }}>
         <IconButton onClick={onBack} sx={{ mr: 2 }}>
           <BackIcon />
@@ -383,6 +446,11 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
       {/* Tab 2: Invoices */}
       {tabValue === 2 && !isNew && supplier && (
         <Box sx={{ mt: 2, width: '100%' }}>
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => openInvoiceDialog()}>
+              הוסף חשבונית ידנית
+            </Button>
+          </Box>
           <TableContainer component={Paper} sx={{ width: '100%' }}>
             <Table sx={{ width: '100%', minWidth: 600 }}>
               <TableHead>
@@ -434,6 +502,11 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
       {/* Tab 3: Delivery Notes */}
       {tabValue === 3 && !isNew && supplier && (
         <Box sx={{ mt: 2, width: '100%' }}>
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => openDnDialog()}>
+              הוסף תעודת משלוח ידנית
+            </Button>
+          </Box>
           <TableContainer component={Paper} sx={{ width: '100%' }}>
             <Table sx={{ width: '100%', minWidth: 600 }}>
               <TableHead>
@@ -453,13 +526,21 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
                     <TableCell>{formatDate(dn.uploadDate)}</TableCell>
                     <TableCell>{dn.totalAmount ? `₪${dn.totalAmount.toFixed(2)}` : 'לא צוין'}</TableCell>
                     <TableCell align="center">
-                      {dn.sourceDocumentId && (
-                        <Tooltip title="הורד מסמך מקור">
-                          <IconButton size="small" onClick={() => handleDownloadDocument(dn.sourceDocumentId)}>
-                            <DocIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
+                      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                        {dn.sourceDocumentId && (
+                          <Tooltip title="הורד מסמך מקור">
+                            <IconButton size="small" onClick={() => handleDownloadDocument(dn.sourceDocumentId)}>
+                              <DocIcon />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        <IconButton size="small" color="primary" onClick={() => openDnDialog(dn)}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton size="small" color="error" onClick={() => setDeleteDnId(dn.id)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -489,12 +570,37 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
         initialData={editingInvoice}
       />
 
+      <DeliveryNoteDialog
+        open={dnDialogOpen}
+        onClose={() => setDnDialogOpen(false)}
+        onSave={handleSaveDn}
+        initialData={editingDn}
+      />
+
+      <InventoryUploadDialog
+        open={uploadDialogOpen}
+        onClose={() => setUploadDialogOpen(false)}
+        onSuccess={() => {
+          setUploadDialogOpen(false);
+          loadSupplier();
+        }}
+        expectedSupplier={supplier ? { name: supplier.name, taxId: supplier.taxId } : undefined}
+      />
+
       <ConfirmDialog
         open={!!deleteInvoiceId}
         title="מחיקת חשבונית"
         content="האם אתה בטוח שברצונך למחוק חשבונית זו? מחיקת החשבונית תשפיע על יתרת הספק."
         onConfirm={handleDeleteInvoice}
         onCancel={() => setDeleteInvoiceId(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deleteDnId}
+        title="מחיקת תעודת משלוח"
+        content="האם אתה בטוח שברצונך למחוק תעודת משלוח זו?"
+        onConfirm={handleDeleteDn}
+        onCancel={() => setDeleteDnId(null)}
       />
     </Box>
   );

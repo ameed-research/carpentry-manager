@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -17,7 +18,7 @@ public class ItemResponse {
     private String id;
     private String name;
     private Integer quantity;
-    private Double priceExcludingVAT;
+    private BigDecimal priceExcludingVAT;
     private String supplierId;
     private String supplierName;
     private String sku;

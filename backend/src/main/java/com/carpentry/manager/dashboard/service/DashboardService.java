@@ -22,9 +22,9 @@ public class DashboardService {
                 .filter(i -> i.getQuantity() < 5)
                 .count();
 
-        double totalDebt = customerRepository.findAll().stream()
-                .mapToDouble(this::calculateDebt)
-                .sum();
+        java.math.BigDecimal totalDebt = customerRepository.findAll().stream()
+                .map(this::calculateDebt)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
 
         return DashboardStats.builder()
                 .totalItems(totalItems)
@@ -33,10 +33,11 @@ public class DashboardService {
                 .build();
     }
 
-    private double calculateDebt(Customer customer) {
-        double totalJobs = customer.getJobs().stream().mapToDouble(Customer.Job::getPrice).sum();
-        double totalPaid = customer.getPayments().stream().mapToDouble(Customer.Payment::getAmount).sum();
-        double discount = customer.getDiscount() != null ? customer.getDiscount() : 0.0;
-        return Math.max(0, totalJobs - totalPaid - discount);
+    private java.math.BigDecimal calculateDebt(Customer customer) {
+        java.math.BigDecimal totalJobs = customer.getJobs().stream().map(Customer.Job::getPrice).filter(java.util.Objects::nonNull).reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        java.math.BigDecimal totalPaid = customer.getPayments().stream().map(Customer.Payment::getAmount).filter(java.util.Objects::nonNull).reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        java.math.BigDecimal discount = customer.getDiscount() != null ? customer.getDiscount() : java.math.BigDecimal.ZERO;
+        java.math.BigDecimal debt = totalJobs.subtract(totalPaid).subtract(discount);
+        return debt.compareTo(java.math.BigDecimal.ZERO) < 0 ? java.math.BigDecimal.ZERO : debt;
     }
 }

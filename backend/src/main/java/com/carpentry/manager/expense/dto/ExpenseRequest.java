@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
@@ -26,11 +27,11 @@ public class ExpenseRequest {
 
     @NotNull(message = "סכום ללא מע\"מ הוא חובה")
     @Min(value = 0, message = "הסכום חייב להיות לפחות 0")
-    private Double amountExcludingVAT;
+    private BigDecimal amountExcludingVAT;
 
     @NotNull(message = "סכום כולל מע\"מ הוא חובה")
     @Min(value = 0, message = "הסכום חייב להיות לפחות 0")
-    private Double amountIncludingVAT;
+    private BigDecimal amountIncludingVAT;
 
     private String sourceDocumentId;
 }

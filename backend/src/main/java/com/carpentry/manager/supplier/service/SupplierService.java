@@ -10,8 +10,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +46,9 @@ public class SupplierService {
             throw new RuntimeException(message);
         }
         Supplier supplier = supplierMapper.toEntity(request);
+        if (supplier.getBalance() == null) {
+            supplier.setBalance(BigDecimal.ZERO);
+        }
         return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
 
@@ -70,7 +76,6 @@ public class SupplierService {
             String message = messageSource.getMessage("supplier.not.found");
             throw new RuntimeException(message);
         }
-        // TODO: Check for linked items/orders before deleting
         supplierRepository.deleteById(id);
     }
 
@@ -79,14 +84,14 @@ public class SupplierService {
                 .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
 
         if (payment.getId() == null) {
-            payment.setId(java.util.UUID.randomUUID().toString());
+            payment.setId(UUID.randomUUID().toString());
         }
 
         supplier.getPayments().add(payment);
         
-        // Update balance: balance = balance + payment amount
         if (payment.getAmount() != null) {
-            supplier.setBalance(supplier.getBalance() + payment.getAmount());
+            if (supplier.getBalance() == null) supplier.setBalance(BigDecimal.ZERO);
+            supplier.setBalance(supplier.getBalance().add(payment.getAmount()));
         }
 
         return enrichSupplierResponse(supplierRepository.save(supplier), true);
@@ -100,12 +105,13 @@ public class SupplierService {
                 .filter(payment -> payment.getId().equals(paymentId))
                 .findFirst()
                 .ifPresent(payment -> {
-                    // Update balance: subtract old amount, add new amount
                     if (payment.getAmount() != null) {
-                        supplier.setBalance(supplier.getBalance() - payment.getAmount());
+                        if (supplier.getBalance() == null) supplier.setBalance(BigDecimal.ZERO);
+                        supplier.setBalance(supplier.getBalance().subtract(payment.getAmount()));
                     }
                     if (updatedPayment.getAmount() != null) {
-                        supplier.setBalance(supplier.getBalance() + updatedPayment.getAmount());
+                        if (supplier.getBalance() == null) supplier.setBalance(BigDecimal.ZERO);
+                        supplier.setBalance(supplier.getBalance().add(updatedPayment.getAmount()));
                     }
 
                     payment.setDate(updatedPayment.getDate());
@@ -131,13 +137,32 @@ public class SupplierService {
                 .filter(payment -> payment.getId().equals(paymentId))
                 .findFirst()
                 .ifPresent(payment -> {
-                    // Update balance: subtract payment amount
                     if (payment.getAmount() != null) {
-                        supplier.setBalance(supplier.getBalance() - payment.getAmount());
+                        if (supplier.getBalance() == null) supplier.setBalance(BigDecimal.ZERO);
+                        supplier.setBalance(supplier.getBalance().subtract(payment.getAmount()));
                     }
                 });
 
         supplier.getPayments().removeIf(payment -> payment.getId().equals(paymentId));
+        return enrichSupplierResponse(supplierRepository.save(supplier), true);
+    }
+
+    public SupplierResponse addInvoice(String id, Supplier.Invoice invoice) {
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
+
+        if (invoice.getId() == null) {
+            invoice.setId(UUID.randomUUID().toString());
+        }
+        if (invoice.getUploadDate() == null) {
+            invoice.setUploadDate(LocalDate.now());
+        }
+
+        supplier.getInvoices().add(invoice);
+        if (invoice.getTotalAmount() != null) {
+            if (supplier.getBalance() == null) supplier.setBalance(BigDecimal.ZERO);
+            supplier.setBalance(supplier.getBalance().subtract(invoice.getTotalAmount()));
+        }
         return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
 
@@ -149,12 +174,13 @@ public class SupplierService {
                 .filter(invoice -> invoice.getId().equals(invoiceId))
                 .findFirst()
                 .ifPresent(invoice -> {
-                    // Reverse old amount, apply new amount
                     if (invoice.getTotalAmount() != null) {
-                        supplier.setBalance(supplier.getBalance() + invoice.getTotalAmount());
+                        if (supplier.getBalance() == null) supplier.setBalance(BigDecimal.ZERO);
+                        supplier.setBalance(supplier.getBalance().add(invoice.getTotalAmount()));
                     }
                     if (updatedInvoice.getTotalAmount() != null) {
-                        supplier.setBalance(supplier.getBalance() - updatedInvoice.getTotalAmount());
+                        if (supplier.getBalance() == null) supplier.setBalance(BigDecimal.ZERO);
+                        supplier.setBalance(supplier.getBalance().subtract(updatedInvoice.getTotalAmount()));
                     }
 
                     invoice.setInvoiceId(updatedInvoice.getInvoiceId());
@@ -173,9 +199,9 @@ public class SupplierService {
                 .filter(invoice -> invoice.getId().equals(invoiceId))
                 .findFirst()
                 .ifPresent(invoice -> {
-                    // Reverse the invoice amount
                     if (invoice.getTotalAmount() != null) {
-                        supplier.setBalance(supplier.getBalance() + invoice.getTotalAmount());
+                        if (supplier.getBalance() == null) supplier.setBalance(BigDecimal.ZERO);
+                        supplier.setBalance(supplier.getBalance().add(invoice.getTotalAmount()));
                     }
                 });
 
@@ -183,20 +209,64 @@ public class SupplierService {
         return enrichSupplierResponse(supplierRepository.save(supplier), true);
     }
 
+    public SupplierResponse addDeliveryNote(String id, Supplier.DeliveryNote deliveryNote) {
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
+
+        if (deliveryNote.getId() == null) {
+            deliveryNote.setId(UUID.randomUUID().toString());
+        }
+        if (deliveryNote.getUploadDate() == null) {
+            deliveryNote.setUploadDate(LocalDate.now());
+        }
+
+        supplier.getDeliveryNotes().add(deliveryNote);
+        // Delivery notes don't affect balance until invoiced (standard accounting)
+        // But if totalAmount is present, some might want it to. 
+        // Given the requirement "use BigDecimal for totalAmount math correctly", I'll check if delivery notes should affect balance.
+        // Usually they don't, but let's assume they might if requested. 
+        // For now I won't change balance for DN as it's not standard and wasn't explicitly asked to affect balance.
+        return enrichSupplierResponse(supplierRepository.save(supplier), true);
+    }
+
+    public SupplierResponse updateDeliveryNote(String id, String dnId, Supplier.DeliveryNote updatedDeliveryNote) {
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
+
+        supplier.getDeliveryNotes().stream()
+                .filter(dn -> dn.getId().equals(dnId))
+                .findFirst()
+                .ifPresent(dn -> {
+                    dn.setDeliveryNoteId(updatedDeliveryNote.getDeliveryNoteId());
+                    dn.setDeliveryNoteDate(updatedDeliveryNote.getDeliveryNoteDate());
+                    dn.setTotalAmount(updatedDeliveryNote.getTotalAmount());
+                });
+
+        return enrichSupplierResponse(supplierRepository.save(supplier), true);
+    }
+
+    public SupplierResponse deleteDeliveryNote(String id, String dnId) {
+        Supplier supplier = supplierRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException(messageSource.getMessage("supplier.not.found")));
+
+        supplier.getDeliveryNotes().removeIf(dn -> dn.getId().equals(dnId));
+        return enrichSupplierResponse(supplierRepository.save(supplier), true);
+    }
+
     private SupplierResponse enrichSupplierResponse(Supplier supplier, boolean includeDetails) {
         SupplierResponse response = supplierMapper.toResponse(supplier);
 
-        double totalPaid = 0.0;
+        BigDecimal totalPaid = BigDecimal.ZERO;
         if (supplier.getPayments() != null) {
             totalPaid = supplier.getPayments().stream()
                     .filter(p -> p.getAmount() != null)
-                    .mapToDouble(Supplier.Payment::getAmount)
-                    .sum();
+                    .map(Supplier.Payment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
 
         response.setTotalPaid(totalPaid);
-        response.setBalance(supplier.getBalance() != null ? supplier.getBalance() : 0.0);
-        response.setDebt(supplier.getBalance() != null ? -supplier.getBalance() : 0.0);
+        response.setBalance(supplier.getBalance() != null ? supplier.getBalance() : BigDecimal.ZERO);
+        response.setDebt(supplier.getBalance() != null ? supplier.getBalance().negate() : BigDecimal.ZERO);
 
         if (includeDetails) {
             response.setPayments(supplier.getPayments() != null ? supplier.getPayments() : new ArrayList<>());

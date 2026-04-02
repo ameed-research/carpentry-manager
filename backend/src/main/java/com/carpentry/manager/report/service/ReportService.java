@@ -22,23 +22,25 @@ public class ReportService {
         LocalDate end = start.plusMonths(1).minusDays(1);
 
         // Calculate income from customer payments in that month
-        double totalIncome = customerRepository.findAll().stream()
+        java.math.BigDecimal totalIncome = customerRepository.findAll().stream()
                 .flatMap(c -> c.getPayments().stream())
                 .filter(p -> !p.getDate().isBefore(start) && !p.getDate().isAfter(end))
-                .mapToDouble(Customer.Payment::getAmount)
-                .sum();
+                .map(Customer.Payment::getAmount)
+                .filter(java.util.Objects::nonNull)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
 
         // Calculate expenses in that month
-        double totalExpenses = expenseRepository.findByDateBetween(start, end).stream()
-                .mapToDouble(Expense::getAmountIncludingVAT) // Using method reference
-                .sum();
+        java.math.BigDecimal totalExpenses = expenseRepository.findByDateBetween(start, end).stream()
+                .map(Expense::getAmountIncludingVAT) // Using method reference
+                .filter(java.util.Objects::nonNull)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
 
         return MonthlyFinancialReport.builder()
                 .year(year)
                 .month(month)
                 .totalIncome(totalIncome)
                 .totalExpenses(totalExpenses)
-                .netProfit(totalIncome - totalExpenses)
+                .netProfit(totalIncome.subtract(totalExpenses))
                 .build();
     }
 }

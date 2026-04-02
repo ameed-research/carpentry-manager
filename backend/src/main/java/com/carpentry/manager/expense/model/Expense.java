@@ -8,6 +8,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Document(collection = "expenses")
@@ -25,9 +26,9 @@ public class Expense {
 
     private String category; // Electricity, Phone, Fuel, etc.
 
-    private Double amountExcludingVAT;
+    private BigDecimal amountExcludingVAT;
 
-    private Double amountIncludingVAT;
+    private BigDecimal amountIncludingVAT;
 
     private String sourceDocumentId;
 }

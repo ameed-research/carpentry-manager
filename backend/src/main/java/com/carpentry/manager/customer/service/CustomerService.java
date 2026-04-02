@@ -172,19 +172,21 @@ public class CustomerService {
     private CustomerResponse enrichCustomerResponse(Customer customer) {
         CustomerResponse response = customerMapper.toResponse(customer);
 
-        double totalAmount = customer.getJobs().stream()
-                .mapToDouble(Customer.Job::getPrice)
-                .sum();
+        java.math.BigDecimal totalAmount = customer.getJobs().stream()
+                .map(Customer.Job::getPrice)
+                .filter(java.util.Objects::nonNull)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
 
-        double totalPaid = customer.getPayments().stream()
-                .mapToDouble(Customer.Payment::getAmount)
-                .sum();
+        java.math.BigDecimal totalPaid = customer.getPayments().stream()
+                .map(Customer.Payment::getAmount)
+                .filter(java.util.Objects::nonNull)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
 
-        double discount = customer.getDiscount() != null ? customer.getDiscount() : 0.0;
+        java.math.BigDecimal discount = customer.getDiscount() != null ? customer.getDiscount() : java.math.BigDecimal.ZERO;
 
         response.setTotalAmount(totalAmount);
         response.setTotalPaid(totalPaid);
-        response.setDebt(totalAmount - totalPaid - discount);
+        response.setDebt(totalAmount.subtract(totalPaid).subtract(discount));
 
         return response;
     }

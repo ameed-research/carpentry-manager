@@ -10,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @Builder
@@ -31,5 +33,5 @@ public class CustomerRequest {
     @Size(max = 100, message = "הכתובת חייבת להיות עד 100 תווים")
     private String address;
 
-    private Double discount;
+    private BigDecimal discount;
 }

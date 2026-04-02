@@ -68,6 +68,13 @@ public class SupplierController {
         return ResponseEntity.ok(supplierService.deletePayment(id, paymentId));
     }
 
+    @PostMapping("/{id}/invoices")
+    public ResponseEntity<SupplierResponse> addInvoice(
+            @PathVariable String id,
+            @RequestBody com.carpentry.manager.supplier.model.Supplier.Invoice invoice) {
+        return ResponseEntity.ok(supplierService.addInvoice(id, invoice));
+    }
+
     @PutMapping("/{id}/invoices/{invoiceId}")
     public ResponseEntity<SupplierResponse> updateInvoice(
             @PathVariable String id,
@@ -81,5 +88,27 @@ public class SupplierController {
             @PathVariable String id,
             @PathVariable String invoiceId) {
         return ResponseEntity.ok(supplierService.deleteInvoice(id, invoiceId));
+    }
+
+    @PostMapping("/{id}/delivery-notes")
+    public ResponseEntity<SupplierResponse> addDeliveryNote(
+            @PathVariable String id,
+            @RequestBody com.carpentry.manager.supplier.model.Supplier.DeliveryNote deliveryNote) {
+        return ResponseEntity.ok(supplierService.addDeliveryNote(id, deliveryNote));
+    }
+
+    @PutMapping("/{id}/delivery-notes/{dnId}")
+    public ResponseEntity<SupplierResponse> updateDeliveryNote(
+            @PathVariable String id,
+            @PathVariable String dnId,
+            @RequestBody com.carpentry.manager.supplier.model.Supplier.DeliveryNote updatedDeliveryNote) {
+        return ResponseEntity.ok(supplierService.updateDeliveryNote(id, dnId, updatedDeliveryNote));
+    }
+
+    @DeleteMapping("/{id}/delivery-notes/{dnId}")
+    public ResponseEntity<SupplierResponse> deleteDeliveryNote(
+            @PathVariable String id,
+            @PathVariable String dnId) {
+        return ResponseEntity.ok(supplierService.deleteDeliveryNote(id, dnId));
     }
 }

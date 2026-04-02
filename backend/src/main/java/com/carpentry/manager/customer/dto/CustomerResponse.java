@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -22,9 +23,9 @@ public class CustomerResponse {
     private String address;
     private List<Customer.Job> jobs;
     private List<Customer.Payment> payments;
-    private Double totalAmount;
-    private Double totalPaid;
-    private Double discount;
-    private Double debt;
+    private BigDecimal totalAmount;
+    private BigDecimal totalPaid;
+    private BigDecimal discount;
+    private BigDecimal debt;
     private boolean closed;
 }

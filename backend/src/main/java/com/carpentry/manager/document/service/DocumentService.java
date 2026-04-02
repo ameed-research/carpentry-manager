@@ -247,7 +247,7 @@ public class DocumentService {
                 .taxId(taxId)
                 .phone(phone)
                 .email(email)
-                .balance(0.0)
+                .balance(java.math.BigDecimal.ZERO)
                 .build();
         return supplierRepository.save(newSupplier);
     }
@@ -263,8 +263,8 @@ public class DocumentService {
 
         for (Map<String, Object> itemData : items) {
             String description = (String) itemData.get("description");
-            Double quantity = convertToDouble(itemData.get("quantity"));
-            Double price = convertToDouble(itemData.get("pricePerUnitWithoutVat"));
+            java.math.BigDecimal quantity = convertToBigDecimal(itemData.get("quantity"));
+            java.math.BigDecimal price = convertToBigDecimal(itemData.get("pricePerUnitWithoutVat"));
             String sku = (String) itemData.get("sku");
 
             if (description == null) {
@@ -283,7 +283,7 @@ public class DocumentService {
                                     );
                                 }
                                 saveHistory(item, username);
-                                item.setQuantity(item.getQuantity() + quantity.intValue());
+                                item.setQuantity(item.getQuantity() + (quantity != null ? quantity.intValue() : 0));
                                 item.setPriceExcludingVAT(price);
                                 item.setSourceDocumentId(document.getId());
                                 item.setDocumentNumber(documentNumber);
@@ -298,7 +298,7 @@ public class DocumentService {
                             () -> {
                                 Item newItem = Item.builder()
                                         .name(description)
-                                        .quantity(quantity.intValue())
+                                        .quantity(quantity != null ? quantity.intValue() : 0)
                                         .priceExcludingVAT(price)
                                         .sourceDocumentId(document.getId())
                                         .documentNumber(documentNumber)
@@ -324,7 +324,7 @@ public class DocumentService {
     }
 
     private void updateSupplierFromExtractedData(CarpentryDocument document, Map<String, Object> data, Supplier supplier) {
-        Double totalWithVat = convertToDouble(data.get("totalAmountWithVat"));
+        java.math.BigDecimal totalWithVat = convertToBigDecimal(data.get("totalAmountWithVat"));
 
         // Handle "documentId" for all types, or fallback to specific fields
         String docId = (String) data.get("documentId");
@@ -347,7 +347,7 @@ public class DocumentService {
 
             // Update balance: balance = balance - totalAmountWithVat
             if (totalWithVat != null) {
-                supplier.setBalance(supplier.getBalance() - totalWithVat);
+                supplier.setBalance(supplier.getBalance().subtract(totalWithVat));
             }
         } else if (document.getType() == CarpentryDocument.DocumentType.DELIVERY_NOTE) {
             Supplier.DeliveryNote deliveryNote = Supplier.DeliveryNote.builder()
@@ -375,13 +375,14 @@ public class DocumentService {
         return new org.springframework.core.io.UrlResource(filePath.toUri());
     }
 
-    private Double convertToDouble(Object obj) {
+    private java.math.BigDecimal convertToBigDecimal(Object obj) {
         if (obj == null) return null;
-        if (obj instanceof Double) return (Double) obj;
-        if (obj instanceof Integer) return ((Integer) obj).doubleValue();
+        if (obj instanceof java.math.BigDecimal) return (java.math.BigDecimal) obj;
+        if (obj instanceof Double) return java.math.BigDecimal.valueOf((Double) obj);
+        if (obj instanceof Integer) return java.math.BigDecimal.valueOf(((Integer) obj).longValue());
         if (obj instanceof String) {
             try {
-                return Double.parseDouble((String) obj);
+                return new java.math.BigDecimal((String) obj);
             } catch (Exception e) {
                 return null;
             }

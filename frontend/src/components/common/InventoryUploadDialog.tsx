@@ -26,9 +26,10 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  expectedSupplier?: { name?: string; taxId?: string };
 }
 
-export default function InventoryUploadDialog({ open, onClose, onSuccess }: Props) {
+export default function InventoryUploadDialog({ open, onClose, onSuccess, expectedSupplier }: Props) {
   const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +80,19 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess }: Prop
 
   const handleApprove = async () => {
     if (!extractedData || !extractedData.dbDocumentId) return;
+
+    if (expectedSupplier) {
+      const nameMismatch = expectedSupplier.name && extractedData.supplierName && 
+                          !extractedData.supplierName.includes(expectedSupplier.name) &&
+                          !expectedSupplier.name.includes(extractedData.supplierName);
+      const taxIdMismatch = expectedSupplier.taxId && extractedData.supplierTaxId && 
+                           extractedData.supplierTaxId !== expectedSupplier.taxId;
+
+      if (nameMismatch || taxIdMismatch) {
+        const confirm = window.confirm('אזהרה: מסמך זה עשוי להיות שייך לספק אחר. האם להמשיך?');
+        if (!confirm) return;
+      }
+    }
     
     setSaving(true);
     setError(null);
@@ -146,6 +160,7 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess }: Prop
             component="label"
           >
             <input
+              id="inventory-upload-input"
               type="file"
               hidden
               accept="image/*,application/pdf"

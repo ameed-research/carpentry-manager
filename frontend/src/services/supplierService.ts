@@ -44,6 +44,10 @@ export const supplierService = {
   addPayment: (id: string, payment: PaymentData) => api.post<Supplier>(`/suppliers/${id}/payments`, payment),
   updatePayment: (id: string, paymentId: string, payment: PaymentData) => api.put<Supplier>(`/suppliers/${id}/payments/${paymentId}`, payment),
   deletePayment: (id: string, paymentId: string) => api.delete<Supplier>(`/suppliers/${id}/payments/${paymentId}`),
+  addInvoice: (id: string, invoice: Invoice) => api.post<Supplier>(`/suppliers/${id}/invoices`, invoice),
   updateInvoice: (id: string, invoiceId: string, invoice: Invoice) => api.put<Supplier>(`/suppliers/${id}/invoices/${invoiceId}`, invoice),
   deleteInvoice: (id: string, invoiceId: string) => api.delete<Supplier>(`/suppliers/${id}/invoices/${invoiceId}`),
+  addDeliveryNote: (id: string, dn: DeliveryNote) => api.post<Supplier>(`/suppliers/${id}/delivery-notes`, dn),
+  updateDeliveryNote: (id: string, dnId: string, dn: DeliveryNote) => api.put<Supplier>(`/suppliers/${id}/delivery-notes/${dnId}`, dn),
+  deleteDeliveryNote: (id: string, dnId: string) => api.delete<Supplier>(`/suppliers/${id}/delivery-notes/${dnId}`),
 };

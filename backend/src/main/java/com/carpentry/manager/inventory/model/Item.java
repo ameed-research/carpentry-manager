@@ -9,6 +9,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Document(collection = "items")
@@ -26,7 +27,7 @@ public class Item {
 
     private Integer quantity;
 
-    private Double priceExcludingVAT;
+    private BigDecimal priceExcludingVAT;
 
     private String supplierId;
 

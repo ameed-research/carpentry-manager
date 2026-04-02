@@ -158,8 +158,33 @@ export default function Inventory() {
     setFormData({ ...formData, [name]: name === 'quantity' || name === 'priceExcludingVAT' ? Number(value) : value });
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setUploadDialogOpen(true);
+      // Hack to pass the file after a tiny delay so dialog mounts
+      setTimeout(() => {
+        const dialogInput = document.getElementById('inventory-upload-input') as HTMLInputElement;
+        if (dialogInput) {
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(e.dataTransfer.files[0]);
+          dialogInput.files = dataTransfer.files;
+          dialogInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }, 300);
+    }
+  };
+
   return (
-    <Box>
+    <Box
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      sx={{ minHeight: '100vh', width: '100%' }}
+    >
       <Typography variant="h4" gutterBottom>
         ניהול מלאי
       </Typography>

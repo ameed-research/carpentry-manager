@@ -8,6 +8,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,7 @@ public class Customer {
     @Builder.Default
     private List<Payment> payments = new ArrayList<>();
 
-    private Double discount; // Flat amount discount
+    private BigDecimal discount; // Flat amount discount
 
     private boolean closed;
 
@@ -56,7 +57,7 @@ public class Customer {
         private String id = UUID.randomUUID().toString();
         private LocalDate date;
         private String itemName;
-        private Double price;
+        private BigDecimal price;
     }
 
     @Getter
@@ -68,7 +69,7 @@ public class Customer {
         @Builder.Default
         private String id = UUID.randomUUID().toString();
         private LocalDate date;
-        private Double amount;
+        private BigDecimal amount;
         private PaymentMethod method;
         private String remarks; // Renamed from details
         private String sourceDocumentId;

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
@@ -17,7 +18,7 @@ public class ExpenseResponse {
     private String id;
     private LocalDate date;
     private String category;
-    private Double amountExcludingVAT;
-    private Double amountIncludingVAT;
+    private BigDecimal amountExcludingVAT;
+    private BigDecimal amountIncludingVAT;
     private String sourceDocumentId;
 }

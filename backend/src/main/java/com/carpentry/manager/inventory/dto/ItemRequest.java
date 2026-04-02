@@ -10,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @Builder
@@ -27,7 +29,7 @@ public class ItemRequest {
 
     @NotNull(message = "{inventory.item.price.required}")
     @Min(value = 0, message = "{inventory.item.price.min}")
-    private Double priceExcludingVAT;
+    private BigDecimal priceExcludingVAT;
 
     @NotBlank(message = "{inventory.item.supplier.required}")
     private String supplierId;

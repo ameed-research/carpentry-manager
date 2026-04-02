@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -25,7 +26,7 @@ public class SupplierResponse {
     private List<Supplier.Payment> payments;
     private List<Supplier.Invoice> invoices;
     private List<Supplier.DeliveryNote> deliveryNotes;
-    private Double totalPaid;
-    private Double balance;
-    private Double debt;
+    private BigDecimal totalPaid;
+    private BigDecimal balance;
+    private BigDecimal debt;
 }
