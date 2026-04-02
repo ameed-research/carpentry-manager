@@ -34,6 +34,8 @@ public class Item {
 
     private String sku; // Universal Catalog Number / MAK"T
 
+    private String documentNumber; // Invoice or Delivery Note number
+
     private String sourceDocumentId;
 
     @LastModifiedDate

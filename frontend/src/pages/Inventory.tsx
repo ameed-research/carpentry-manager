@@ -188,7 +188,7 @@ export default function Inventory() {
             startIcon={<CloudUploadIcon />}
             onClick={() => setUploadDialogOpen(true)}
           >
-            העלה מסמך (AI)
+            העלה מסמך
           </Button>
           <TextField
             size="small"

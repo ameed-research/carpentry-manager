@@ -178,13 +178,15 @@ public class DocumentService {
 
         document = documentRepository.save(document);
         
-        // Include document ID in response so frontend can approve it later
-        extractedData.put("documentId", document.getId());
+        // Include database document ID in response so frontend can approve it later
+        // Use a different key than 'documentId' to avoid overwriting Gemini's extracted invoice/delivery note number
+        extractedData.put("dbDocumentId", document.getId());
         
         return extractedData;
     }
 
     public void approveInventoryDocument(String documentId, Map<String, Object> finalizedData) throws Exception {
+        // 'documentId' here is the MongoDB ID (dbDocumentId from frontend)
         CarpentryDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new RuntimeException("מסמך לא נמצא"));
 
@@ -257,6 +259,7 @@ public class DocumentService {
         List<Map<String, Object>> items = (List<Map<String, Object>>) data.get("items");
         if (items == null) return;
 
+        String documentNumber = (String) data.get("documentId");
         String username = getCurrentUsername();
         String defaultCategoryId = categoryRepository.findByName("כללי")
                 .map(Category::getId).orElse(null);
@@ -284,6 +287,7 @@ public class DocumentService {
                                 item.setQuantity(item.getQuantity() + quantity.intValue());
                                 item.setPriceExcludingVAT(price);
                                 item.setSourceDocumentId(document.getId());
+                                item.setDocumentNumber(documentNumber);
                                 item.setSupplierId(supplierId);
                                 if (sku != null && !sku.isBlank() && (item.getSku() == null || item.getSku().isBlank())) {
                                     item.setSku(sku);
@@ -299,6 +303,7 @@ public class DocumentService {
                                         .priceExcludingVAT(price)
                                         .categoryId(defaultCategoryId)
                                         .sourceDocumentId(document.getId())
+                                        .documentNumber(documentNumber)
                                         .supplierId(supplierId)
                                         .sku(sku)
                                         .updatedBy(username)
@@ -395,6 +400,7 @@ public class DocumentService {
                 .priceExcludingVAT(source.getPriceExcludingVAT())
                 .supplierId(source.getSupplierId())
                 .sku(source.getSku())
+                .documentNumber(source.getDocumentNumber())
                 .sourceDocumentId(source.getSourceDocumentId())
                 .updatedDate(source.getUpdatedDate())
                 .updatedBy(source.getUpdatedBy())

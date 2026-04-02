@@ -133,6 +133,7 @@ public class InventoryService {
                 .priceExcludingVAT(source.getPriceExcludingVAT())
                 .supplierId(source.getSupplierId())
                 .sku(source.getSku())
+                .documentNumber(source.getDocumentNumber())
                 .sourceDocumentId(source.getSourceDocumentId())
                 .updatedDate(source.getUpdatedDate())
                 .updatedBy(source.getUpdatedBy())

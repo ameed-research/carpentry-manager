@@ -35,4 +35,6 @@ public class ItemRequest {
     private String supplierId;
 
     private String sku;
+
+    private String documentNumber;
 }

@@ -21,8 +21,7 @@ public class SupplierRequest {
     @Size(max = 100, message = "{supplier.name.max.size}")
     private String name;
 
-    @NotBlank(message = "{supplier.phone.required}")
-    @Pattern(regexp = "^(0[23489]|0[57]\\d)\\d{7}$", message = "{supplier.phone.invalid}")
+    @Pattern(regexp = "^$|^(0[23489]|0[57]\\d)\\d{7}$", message = "{supplier.phone.invalid}")
     private String phone;
 
     private String taxId;

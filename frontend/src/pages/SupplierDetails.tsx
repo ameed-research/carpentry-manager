@@ -110,7 +110,6 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
     if (!personalData.name) newErrors.name = 'שם הוא חובה';
     if (personalData.name.length > 100) newErrors.name = 'שם חייב להיות עד 100 תווים';
     
-    if (!personalData.phone) newErrors.phone = 'טלפון הוא חובה';
     if (personalData.phone && !ISRAELI_PHONE_REGEX.test(personalData.phone)) newErrors.phone = 'מספר טלפון לא תקין';
     
     if (personalData.contactPhone && !ISRAELI_PHONE_REGEX.test(personalData.contactPhone)) newErrors.contactPhone = 'מספר טלפון איש קשר לא תקין';
@@ -231,7 +230,7 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={tabValue} onChange={(_, val) => setTabValue(val)}>
           <Tab label="נתונים כלליים" />
-          <Tab label="תשלומים" disabled={isNew} />
+          <Tab label="תשלומים לספק" disabled={isNew} />
           <Tab label="חשבוניות" disabled={isNew} />
           <Tab label="תעודות משלוח" disabled={isNew} />
         </Tabs>
@@ -256,7 +255,6 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
               <TextField
                 label="טלפון ראשי"
                 fullWidth
-                required
                 value={personalData.phone}
                 error={!!errors.phone}
                 helperText={errors.phone}

@@ -66,12 +66,12 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess }: Prop
   };
 
   const handleApprove = async () => {
-    if (!extractedData || !extractedData.documentId) return;
+    if (!extractedData || !extractedData.dbDocumentId) return;
     
     setSaving(true);
     setError(null);
     try {
-      await documentService.approveInventoryDocument(extractedData.documentId, extractedData);
+      await documentService.approveInventoryDocument(extractedData.dbDocumentId, extractedData);
       onSuccess();
       handleReset();
     } catch (err: any) {
@@ -107,7 +107,8 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess }: Prop
             sx={{
               border: '2px dashed #ccc',
               borderRadius: 2,
-              p: 6,
+              p: 10,
+              my: 2,
               textAlign: 'center',
               cursor: 'pointer',
               bgcolor: 'background.default',

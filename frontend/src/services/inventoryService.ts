@@ -11,6 +11,7 @@ export interface Item {
   supplierId: string;
   supplierName?: string;
   sku?: string;
+  documentNumber?: string;
   updatedDate?: string;
   updatedBy?: string;
   version: number;

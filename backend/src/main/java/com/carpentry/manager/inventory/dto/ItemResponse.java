@@ -23,6 +23,7 @@ public class ItemResponse {
     private String supplierId;
     private String supplierName;
     private String sku;
+    private String documentNumber;
     private LocalDateTime updatedDate;
     private String updatedBy;
     private Integer version;
