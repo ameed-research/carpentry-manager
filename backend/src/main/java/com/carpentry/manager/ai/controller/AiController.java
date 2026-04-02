@@ -1,6 +1,6 @@
 package com.carpentry.manager.ai.controller;
 
-import com.carpentry.manager.ai.service.GeminiService;
+import com.carpentry.manager.ai.service.AiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +17,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AiController {
 
-    private final GeminiService geminiService;
+    private final AiService aiService;
 
     @PostMapping(value = "/extract-payment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> extractPayment(@RequestParam("file") MultipartFile file) {
@@ -29,7 +29,7 @@ public class AiController {
             return ResponseEntity.badRequest().body(Map.of("error", "Only images and PDF files are supported"));
         }
 
-        Map<String, Object> extractedData = geminiService.extractPaymentData(file);
+        Map<String, Object> extractedData = aiService.extractPaymentData(file);
         return ResponseEntity.ok(extractedData);
     }
 }

@@ -11,10 +11,17 @@ server:
   port: 8080
 
 app:
+  ai:
+    provider: gemini # gemini or claude
   gemini:
     api-key: ${GEMINI_API_KEY:}
     model: gemini-3.1-pro-preview
     url: https://generativelanguage.googleapis.com/v1beta/models/${app.gemini.model}:generateContent
+  claude:
+    api-key: ${CLAUDE_API_KEY:}
+    model: claude-opus-4-6
+    url: https://api.anthropic.com/v1/messages
+    version: 2023-06-01
   financial:
     vat-rate: 17.0
   storage:

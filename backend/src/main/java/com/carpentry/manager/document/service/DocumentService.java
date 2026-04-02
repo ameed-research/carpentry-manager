@@ -1,6 +1,6 @@
 package com.carpentry.manager.document.service;
 
-import com.carpentry.manager.ai.service.GeminiService;
+import com.carpentry.manager.ai.service.AiService;
 import com.carpentry.manager.document.model.CarpentryDocument;
 import com.carpentry.manager.document.repository.DocumentRepository;
 import com.carpentry.manager.inventory.model.InventoryHistory;
@@ -49,7 +49,7 @@ public class DocumentService {
     private final SupplierRepository supplierRepository;
     private final SupplierService supplierService;
     private final NotificationService notificationService;
-    private final GeminiService geminiService;
+    private final AiService aiService;
     private final ObjectMapper objectMapper;
     private final MessagesUtils messagesUtils;
 
@@ -99,7 +99,7 @@ public class DocumentService {
         try {
             log.info("Processing document: {} of type {}", document.getOriginalName(), document.getType());
 
-            Map<String, Object> extractedData = geminiService.extractDocumentData(file, document.getType());
+            Map<String, Object> extractedData = aiService.extractDocumentData(file, document.getType());
             String jsonText = objectMapper.writeValueAsString(extractedData);
             document.setExtractedData(jsonText);
             document.setStatus(CarpentryDocument.DocumentStatus.PROCESSED);
@@ -164,7 +164,7 @@ public class DocumentService {
                 .build();
 
         // 1. Send to Gemini for analysis
-        Map<String, Object> extractedData = geminiService.analyzeInventoryDocument(file);
+        Map<String, Object> extractedData = aiService.analyzeInventoryDocument(file);
 
         // 2. Determine type
         String typeStr = (String) extractedData.get("type");
@@ -219,7 +219,7 @@ public class DocumentService {
                 .build();
 
         // 1. Send to Gemini for unified analysis
-        Map<String, Object> extractedData = geminiService.analyzeSupplierDocument(file);
+        Map<String, Object> extractedData = aiService.analyzeSupplierDocument(file);
 
         // 2. Determine type
         String typeStr = (String) extractedData.get("type");
