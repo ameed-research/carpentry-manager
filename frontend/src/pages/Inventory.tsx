@@ -209,7 +209,7 @@ export default function Inventory() {
               <TableRow key={item.id}>
                 <TableCell>{item.name}</TableCell>
                 <TableCell>{item.quantity}</TableCell>
-                <TableCell>₪{item.priceExcludingVAT.toFixed(2)}</TableCell>
+                <TableCell>{item.priceExcludingVAT?.toFixed(2)}</TableCell>
                 <TableCell>{item.supplierName}</TableCell>
                 <TableCell>{item.sku}</TableCell>
                 <TableCell align="right">

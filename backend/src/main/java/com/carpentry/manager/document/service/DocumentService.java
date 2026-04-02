@@ -104,9 +104,9 @@ public class DocumentService {
             // Logic based on document type
             if (document.getType() == CarpentryDocument.DocumentType.INVOICE ||
                     document.getType() == CarpentryDocument.DocumentType.DELIVERY_NOTE) {
-                
+
                 Supplier supplier = findOrCreateSupplier(extractedData);
-                
+
                 updateInventoryFromExtractedData(document, extractedData, supplier.getId());
                 updateSupplierFromExtractedData(document, extractedData, supplier);
             }
@@ -161,7 +161,7 @@ public class DocumentService {
 
         // 1. Send to Gemini for analysis
         Map<String, Object> extractedData = geminiService.analyzeInventoryDocument(file);
-        
+
         // 2. Determine type
         String typeStr = (String) extractedData.get("type");
         if ("INVOICE".equals(typeStr)) {
@@ -174,11 +174,11 @@ public class DocumentService {
         }
 
         document = documentRepository.save(document);
-        
+
         // Include database document ID in response so frontend can approve it later
         // Use a different key than 'documentId' to avoid overwriting Gemini's extracted invoice/delivery note number
         extractedData.put("dbDocumentId", document.getId());
-        
+
         return extractedData;
     }
 
@@ -193,7 +193,7 @@ public class DocumentService {
 
         String jsonText = objectMapper.writeValueAsString(finalizedData);
         document.setExtractedData(jsonText);
-        
+
         // Update document type if user changed it
         String typeStr = (String) finalizedData.get("type");
         if ("INVOICE".equals(typeStr)) {
@@ -204,7 +204,7 @@ public class DocumentService {
 
         try {
             Supplier supplier = findOrCreateSupplier(finalizedData);
-            
+
             updateInventoryFromExtractedData(document, finalizedData, supplier.getId());
             updateSupplierFromExtractedData(document, finalizedData, supplier);
 
@@ -254,7 +254,9 @@ public class DocumentService {
 
     private void updateInventoryFromExtractedData(CarpentryDocument document, Map<String, Object> data, String supplierId) {
         List<Map<String, Object>> items = (List<Map<String, Object>>) data.get("items");
-        if (items == null) return;
+        if (items == null) {
+            return;
+        }
 
         String documentNumber = (String) data.get("documentId");
         String username = getCurrentUsername();
@@ -265,14 +267,16 @@ public class DocumentService {
             Double price = convertToDouble(itemData.get("pricePerUnitWithoutVat"));
             String sku = (String) itemData.get("sku");
 
-            if (description == null || quantity == null || price == null) continue;
+            if (description == null) {
+                continue;
+            }
 
             itemRepository.findAll().stream()
                     .filter(i -> i.getName().equalsIgnoreCase(description))
                     .findFirst()
                     .ifPresentOrElse(
                             item -> {
-                                if (!item.getPriceExcludingVAT().equals(price)) {
+                                if (!equalNumbers(item.getPriceExcludingVAT(), price)) {
                                     notificationService.sendNotification(
                                             "מחיר הפריט '" + description + "' עודכן ל-₪" + price + " בעקבות קליטת מסמך",
                                             Notification.NotificationType.WARNING
@@ -309,15 +313,25 @@ public class DocumentService {
         }
     }
 
+    private boolean equalNumbers(Number number1, Number number2) {
+        if (number1 == null && number2 == null) {
+            return true;
+        }
+        if (number1 == null || number2 == null) {
+            return false;
+        }
+        return String.valueOf(number1).equals(String.valueOf(number2));
+    }
+
     private void updateSupplierFromExtractedData(CarpentryDocument document, Map<String, Object> data, Supplier supplier) {
         Double totalWithVat = convertToDouble(data.get("totalAmountWithVat"));
-        
+
         // Handle "documentId" for all types, or fallback to specific fields
         String docId = (String) data.get("documentId");
         if (docId == null) {
             docId = (String) data.get(document.getType() == CarpentryDocument.DocumentType.INVOICE ? "invoiceId" : "deliveryNoteId");
         }
-        
+
         String dateStr = (String) data.get("date");
         LocalDate docDate = dateStr != null ? LocalDate.parse(dateStr) : LocalDate.now();
 
@@ -330,7 +344,7 @@ public class DocumentService {
                     .uploadDate(LocalDate.now())
                     .build();
             supplier.getInvoices().add(invoice);
-            
+
             // Update balance: balance = balance - totalAmountWithVat
             if (totalWithVat != null) {
                 supplier.setBalance(supplier.getBalance() - totalWithVat);
