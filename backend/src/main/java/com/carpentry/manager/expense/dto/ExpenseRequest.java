@@ -19,18 +19,18 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class ExpenseRequest {
 
-    @NotNull(message = "תאריך ההוצאה הוא חובה")
+    @NotNull(message = "{expense.date.required}")
     private LocalDate date;
 
-    @NotBlank(message = "קטגוריית ההוצאה היא חובה")
+    @NotBlank(message = "{expense.category.required}")
     private String category;
 
-    @NotNull(message = "סכום ללא מע\"מ הוא חובה")
-    @Min(value = 0, message = "הסכום חייב להיות לפחות 0")
+    @NotNull(message = "{expense.amount.without.vat.required}")
+    @Min(value = 0, message = "{expense.amount.min}")
     private BigDecimal amountExcludingVAT;
 
-    @NotNull(message = "סכום כולל מע\"מ הוא חובה")
-    @Min(value = 0, message = "הסכום חייב להיות לפחות 0")
+    @NotNull(message = "{expense.amount.with.vat.required}")
+    @Min(value = 0, message = "{expense.amount.min}")
     private BigDecimal amountIncludingVAT;
 
     private String sourceDocumentId;

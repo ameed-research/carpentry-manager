@@ -12,6 +12,7 @@ import com.carpentry.manager.notification.service.NotificationService;
 import com.carpentry.manager.supplier.model.Supplier;
 import com.carpentry.manager.supplier.repository.SupplierRepository;
 import com.carpentry.manager.supplier.service.SupplierService;
+import com.carpentry.manager.util.MessagesUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +51,7 @@ public class DocumentService {
     private final NotificationService notificationService;
     private final GeminiService geminiService;
     private final ObjectMapper objectMapper;
+    private final MessagesUtils messagesUtils;
 
     @Value("${app.storage.docs-path}")
     private String docsPath;
@@ -114,7 +116,7 @@ public class DocumentService {
             }
 
             notificationService.sendNotification(
-                    "מסמך " + document.getOriginalName() + " עובד בהצלחה",
+                    messagesUtils.getMessage("document.processed.success", document.getOriginalName()),
                     Notification.NotificationType.INFO
             );
 
@@ -123,7 +125,7 @@ public class DocumentService {
             document.setStatus(CarpentryDocument.DocumentStatus.FAILED);
             documentRepository.save(document);
             notificationService.sendNotification(
-                    "שגיאה בעיבוד מסמך " + document.getOriginalName(),
+                    messagesUtils.getMessage("document.processing.error", document.getOriginalName()),
                     Notification.NotificationType.ERROR
             );
         }
@@ -133,7 +135,7 @@ public class DocumentService {
         // Validate file type
         String contentType = file.getContentType();
         if (contentType == null || (!contentType.startsWith("image/") && !contentType.equals("application/pdf"))) {
-            throw new RuntimeException("סוג קובץ לא נתמך. יש להעלות תמונות או קבצי PDF בלבד.");
+            throw new RuntimeException(messagesUtils.getMessage("document.unsupported.type"));
         }
 
         byte[] content = file.getBytes();
@@ -188,7 +190,7 @@ public class DocumentService {
         // Validate file type
         String contentType = file.getContentType();
         if (contentType == null || (!contentType.startsWith("image/") && !contentType.equals("application/pdf"))) {
-            throw new RuntimeException("סוג קובץ לא נתמך. יש להעלות תמונות או קבצי PDF בלבד.");
+            throw new RuntimeException(messagesUtils.getMessage("document.unsupported.type"));
         }
 
         byte[] content = file.getBytes();
@@ -245,10 +247,10 @@ public class DocumentService {
     public void approveInventoryDocument(String documentId, Map<String, Object> finalizedData) throws Exception {
         // 'documentId' here is the MongoDB ID (dbDocumentId from frontend)
         CarpentryDocument document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new RuntimeException("מסמך לא נמצא"));
+                .orElseThrow(() -> new RuntimeException(messagesUtils.getMessage("document.not.found")));
 
         if (document.getStatus() == CarpentryDocument.DocumentStatus.PROCESSED) {
-            throw new RuntimeException("מסמך זה כבר אושר ועובד");
+            throw new RuntimeException(messagesUtils.getMessage("document.already.processed"));
         }
 
         String jsonText = objectMapper.writeValueAsString(finalizedData);
@@ -272,14 +274,14 @@ public class DocumentService {
             documentRepository.save(document);
 
             notificationService.sendNotification(
-                    "מסמך המלאי " + document.getOriginalName() + " עובד ואושר בהצלחה",
+                    messagesUtils.getMessage("document.inventory.processed.success", document.getOriginalName()),
                     Notification.NotificationType.INFO
             );
         } catch (Exception e) {
             log.error("Error approving document", e);
             document.setStatus(CarpentryDocument.DocumentStatus.FAILED);
             documentRepository.save(document);
-            throw new RuntimeException("שגיאה בעדכון הנתונים ממסמך: " + e.getMessage());
+            throw new RuntimeException(messagesUtils.getMessage("document.data.update.error", e.getMessage()));
         }
     }
 
@@ -303,7 +305,7 @@ public class DocumentService {
 
         // Create new supplier if not found
         Supplier newSupplier = Supplier.builder()
-                .name(name != null ? name : "ספק לא מזוהה")
+                .name(name != null ? name : messagesUtils.getMessage("document.supplier.unknown"))
                 .taxId(taxId)
                 .phone(phone)
                 .email(email)
@@ -338,7 +340,7 @@ public class DocumentService {
                             item -> {
                                 if (!equalNumbers(item.getPriceExcludingVAT(), price)) {
                                     notificationService.sendNotification(
-                                            "מחיר הפריט '" + description + "' עודכן ל-₪" + price + " בעקבות קליטת מסמך",
+                                            messagesUtils.getMessage("document.price.updated", description, price),
                                             Notification.NotificationType.WARNING
                                     );
                                 }
@@ -425,11 +427,11 @@ public class DocumentService {
 
     public org.springframework.core.io.Resource downloadDocument(String id) throws Exception {
         CarpentryDocument document = documentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("מסמך לא נמצא"));
+                .orElseThrow(() -> new RuntimeException(messagesUtils.getMessage("document.not.found")));
 
         Path filePath = Paths.get(document.getFilePath());
         if (!Files.exists(filePath)) {
-            throw new RuntimeException("קובץ לא נמצא בשרת");
+            throw new RuntimeException(messagesUtils.getMessage("document.file.not.found"));
         }
 
         return new org.springframework.core.io.UrlResource(filePath.toUri());

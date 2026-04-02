@@ -24,9 +24,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <CacheProvider value={cacheRtl}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <div dir="rtl">
-            <App />
-          </div>
+          <App />
         </ThemeProvider>
       </CacheProvider>
     </Provider>

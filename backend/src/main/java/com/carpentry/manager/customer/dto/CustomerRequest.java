@@ -19,18 +19,18 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class CustomerRequest {
 
-    @NotBlank(message = "שם הלקוח הוא חובה")
-    @Size(max = 100, message = "שם הלקוח חייב להיות עד 100 תווים")
+    @NotBlank(message = "{customer.name.required}")
+    @Size(max = 100, message = "{customer.name.max.size}")
     private String name;
 
-    @NotBlank(message = "טלפון הוא חובה")
-    @Pattern(regexp = "^(0[23489]|0[57]\\d)\\d{7}$", message = "מספר טלפון לא תקין")
+    @NotBlank(message = "{customer.phone.required}")
+    @Pattern(regexp = "^(0[23489]|0[57]\\d)\\d{7}$", message = "{customer.phone.invalid}")
     private String phone;
 
-    @Email(message = "כתובת אימייל לא תקינה")
+    @Email(message = "{customer.email.invalid}")
     private String email;
 
-    @Size(max = 100, message = "הכתובת חייבת להיות עד 100 תווים")
+    @Size(max = 100, message = "{customer.address.max.size}")
     private String address;
 
     private BigDecimal discount;

@@ -5,6 +5,7 @@ import com.carpentry.manager.customer.dto.CustomerResponse;
 import com.carpentry.manager.customer.mapper.CustomerMapper;
 import com.carpentry.manager.customer.model.Customer;
 import com.carpentry.manager.customer.repository.CustomerRepository;
+import com.carpentry.manager.util.MessagesUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
+    private final MessagesUtils messagesUtils;
 
     public List<CustomerResponse> getAllCustomers() {
         return customerRepository.findAll().stream()
@@ -27,13 +29,13 @@ public class CustomerService {
 
     public CustomerResponse getCustomerById(String id) {
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+                .orElseThrow(() -> new RuntimeException(messagesUtils.getMessage("customer.not.found")));
         return enrichCustomerResponse(customer);
     }
 
     public CustomerResponse createCustomer(CustomerRequest request) {
         if (customerRepository.findByName(request.getName()).isPresent()) {
-            throw new RuntimeException("לקוח בשם זה כבר קיים");
+            throw new RuntimeException(messagesUtils.getMessage("customer.create.duplicate"));
         }
         Customer customer = customerMapper.toEntity(request);
         return enrichCustomerResponse(customerRepository.save(customer));
@@ -41,16 +43,16 @@ public class CustomerService {
 
     public CustomerResponse updateCustomer(String id, CustomerRequest request) {
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+                .orElseThrow(() -> new RuntimeException(messagesUtils.getMessage("customer.not.found")));
 
         if (customer.isClosed()) {
-            throw new RuntimeException("לא ניתן לערוך לקוח שתיקו סגור");
+            throw new RuntimeException(messagesUtils.getMessage("customer.file.closed.edit"));
         }
 
         customerRepository.findByName(request.getName())
                 .ifPresent(existing -> {
                     if (!existing.getId().equals(id)) {
-                        throw new RuntimeException("לקוח בשם זה כבר קיים");
+                        throw new RuntimeException(messagesUtils.getMessage("customer.create.duplicate"));
                     }
                 });
 
@@ -60,10 +62,10 @@ public class CustomerService {
 
     public void deleteCustomer(String id) {
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+                .orElseThrow(() -> new RuntimeException(messagesUtils.getMessage("customer.not.found")));
 
         if (customer.isClosed()) {
-            throw new RuntimeException("לא ניתן למחוק לקוח שתיקו סגור");
+            throw new RuntimeException(messagesUtils.getMessage("customer.file.closed.delete"));
         }
 
         customerRepository.deleteById(id);
@@ -71,16 +73,16 @@ public class CustomerService {
 
     public CustomerResponse closeCustomer(String id) {
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+                .orElseThrow(() -> new RuntimeException(messagesUtils.getMessage("customer.not.found")));
         customer.setClosed(true);
         return enrichCustomerResponse(customerRepository.save(customer));
     }
 
     public CustomerResponse addJob(String id, Customer.Job job) {
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+                .orElseThrow(() -> new RuntimeException(messagesUtils.getMessage("customer.not.found")));
         if (customer.isClosed()) {
-            throw new RuntimeException("לא ניתן להוסיף עבודה ללקוח שתיקו סגור");
+            throw new RuntimeException(messagesUtils.getMessage("customer.file.closed.add.work"));
         }
         if (job.getId() == null) {
             job.setId(java.util.UUID.randomUUID().toString());
@@ -91,9 +93,9 @@ public class CustomerService {
 
     public CustomerResponse updateJob(String id, String jobId, Customer.Job updatedJob) {
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+                .orElseThrow(() -> new RuntimeException(messagesUtils.getMessage("customer.not.found")));
         if (customer.isClosed()) {
-            throw new RuntimeException("לא ניתן לערוך עבודה ללקוח שתיקו סגור");
+            throw new RuntimeException(messagesUtils.getMessage("customer.file.closed.edit.work"));
         }
         
         customer.getJobs().stream()
@@ -110,9 +112,9 @@ public class CustomerService {
 
     public CustomerResponse deleteJob(String id, String jobId) {
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+                .orElseThrow(() -> new RuntimeException(messagesUtils.getMessage("customer.not.found")));
         if (customer.isClosed()) {
-            throw new RuntimeException("לא ניתן למחוק עבודה ללקוח שתיקו סגור");
+            throw new RuntimeException(messagesUtils.getMessage("customer.file.closed.delete.work"));
         }
         
         customer.getJobs().removeIf(job -> job.getId().equals(jobId));
@@ -121,9 +123,9 @@ public class CustomerService {
 
     public CustomerResponse addPayment(String id, Customer.Payment payment) {
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+                .orElseThrow(() -> new RuntimeException(messagesUtils.getMessage("customer.not.found")));
         if (customer.isClosed()) {
-            throw new RuntimeException("לא ניתן להוסיף תשלום ללקוח שתיקו סגור");
+            throw new RuntimeException(messagesUtils.getMessage("customer.file.closed.add.payment"));
         }
         if (payment.getId() == null) {
             payment.setId(java.util.UUID.randomUUID().toString());
@@ -134,9 +136,9 @@ public class CustomerService {
 
     public CustomerResponse updatePayment(String id, String paymentId, Customer.Payment updatedPayment) {
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+                .orElseThrow(() -> new RuntimeException(messagesUtils.getMessage("customer.not.found")));
         if (customer.isClosed()) {
-            throw new RuntimeException("לא ניתן לערוך תשלום ללקוח שתיקו סגור");
+            throw new RuntimeException(messagesUtils.getMessage("customer.file.closed.edit.payment"));
         }
         
         customer.getPayments().stream()
@@ -160,9 +162,9 @@ public class CustomerService {
 
     public CustomerResponse deletePayment(String id, String paymentId) {
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("לקוח לא נמצא"));
+                .orElseThrow(() -> new RuntimeException(messagesUtils.getMessage("customer.not.found")));
         if (customer.isClosed()) {
-            throw new RuntimeException("לא ניתן למחוק תשלום ללקוח שתיקו סגור");
+            throw new RuntimeException(messagesUtils.getMessage("customer.file.closed.delete.payment"));
         }
         
         customer.getPayments().removeIf(payment -> payment.getId().equals(paymentId));

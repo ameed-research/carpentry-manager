@@ -5,6 +5,7 @@ import com.carpentry.manager.expense.dto.ExpenseResponse;
 import com.carpentry.manager.expense.mapper.ExpenseMapper;
 import com.carpentry.manager.expense.model.Expense;
 import com.carpentry.manager.expense.repository.ExpenseRepository;
+import com.carpentry.manager.util.MessagesUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
     private final ExpenseMapper expenseMapper;
+    private final MessagesUtils messagesUtils;
 
     public List<ExpenseResponse> getAllExpenses() {
         return expenseRepository.findAll().stream()
@@ -41,14 +43,14 @@ public class ExpenseService {
 
     public ExpenseResponse updateExpense(String id, ExpenseRequest request) {
         Expense expense = expenseRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("הוצאה לא נמצאה"));
+                .orElseThrow(() -> new RuntimeException(messagesUtils.getMessage("expense.not.found")));
         expenseMapper.updateEntity(request, expense);
         return expenseMapper.toResponse(expenseRepository.save(expense));
     }
 
     public void deleteExpense(String id) {
         if (!expenseRepository.existsById(id)) {
-            throw new RuntimeException("הוצאה לא נמצאה");
+            throw new RuntimeException(messagesUtils.getMessage("expense.not.found"));
         }
         expenseRepository.deleteById(id);
     }
