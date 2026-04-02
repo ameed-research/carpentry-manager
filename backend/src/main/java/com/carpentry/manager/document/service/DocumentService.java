@@ -18,9 +18,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -56,12 +58,12 @@ public class DocumentService {
         return documentRepository.findAll();
     }
 
-    public CarpentryDocument uploadDocument(MultipartFile file, CarpentryDocument.DocumentType type) throws IOException {
+    public CarpentryDocument uploadDocument(MultipartFile file, CarpentryDocument.DocumentType type, boolean force) throws IOException {
         byte[] content = file.getBytes();
         String fileHash = DigestUtils.md5Hex(content);
 
-        if (documentRepository.findByFileHash(fileHash).isPresent()) {
-            throw new RuntimeException("מסמך זה כבר הועלה בעבר");
+        if (!force && documentRepository.findByFileHash(fileHash).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "DUPLICATE_DOCUMENT");
         }
 
         Path root = Paths.get(docsPath);
@@ -127,7 +129,7 @@ public class DocumentService {
         }
     }
 
-    public Map<String, Object> analyzeInventoryDocument(MultipartFile file) throws Exception {
+    public Map<String, Object> analyzeInventoryDocument(MultipartFile file, boolean force) throws Exception {
         // Validate file type
         String contentType = file.getContentType();
         if (contentType == null || (!contentType.startsWith("image/") && !contentType.equals("application/pdf"))) {
@@ -137,8 +139,8 @@ public class DocumentService {
         byte[] content = file.getBytes();
         String fileHash = DigestUtils.md5Hex(content);
 
-        if (documentRepository.findByFileHash(fileHash).isPresent()) {
-            throw new RuntimeException("מסמך זה כבר הועלה בעבר");
+        if (!force && documentRepository.findByFileHash(fileHash).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "DUPLICATE_DOCUMENT");
         }
 
         Path root = Paths.get(docsPath);
@@ -182,7 +184,7 @@ public class DocumentService {
         return extractedData;
     }
 
-    public Map<String, Object> analyzeSupplierDocument(MultipartFile file) throws Exception {
+    public Map<String, Object> analyzeSupplierDocument(MultipartFile file, boolean force) throws Exception {
         // Validate file type
         String contentType = file.getContentType();
         if (contentType == null || (!contentType.startsWith("image/") && !contentType.equals("application/pdf"))) {
@@ -192,8 +194,8 @@ public class DocumentService {
         byte[] content = file.getBytes();
         String fileHash = DigestUtils.md5Hex(content);
 
-        if (documentRepository.findByFileHash(fileHash).isPresent()) {
-            throw new RuntimeException("מסמך זה כבר הועלה בעבר");
+        if (!force && documentRepository.findByFileHash(fileHash).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "DUPLICATE_DOCUMENT");
         }
 
         Path root = Paths.get(docsPath);

@@ -20,17 +20,17 @@ export const documentService = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
-  analyzeInventoryDocument: (file: File) => {
+  analyzeInventoryDocument: (file: File, force: boolean = false) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post<any>('/documents/analyze-inventory', formData, {
+    return api.post<any>(`/documents/analyze-inventory?force=${force}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
-  analyzeSupplierDocument: (file: File) => {
+  analyzeSupplierDocument: (file: File, force: boolean = false) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post<any>('/documents/analyze-supplier', formData, {
+    return api.post<any>(`/documents/analyze-supplier?force=${force}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },

@@ -32,23 +32,26 @@ public class DocumentController {
     @PostMapping("/upload")
     public ResponseEntity<CarpentryDocument> uploadDocument(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("type") CarpentryDocument.DocumentType type
+            @RequestParam("type") CarpentryDocument.DocumentType type,
+            @RequestParam(value = "force", defaultValue = "false") boolean force
     ) throws IOException {
-        return ResponseEntity.ok(documentService.uploadDocument(file, type));
+        return ResponseEntity.ok(documentService.uploadDocument(file, type, force));
     }
 
     @PostMapping("/analyze-inventory")
     public ResponseEntity<Map<String, Object>> analyzeInventoryDocument(
-            @RequestParam("file") MultipartFile file
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "force", defaultValue = "false") boolean force
     ) throws Exception {
-        return ResponseEntity.ok(documentService.analyzeInventoryDocument(file));
+        return ResponseEntity.ok(documentService.analyzeInventoryDocument(file, force));
     }
 
     @PostMapping("/analyze-supplier")
     public ResponseEntity<Map<String, Object>> analyzeSupplierDocument(
-            @RequestParam("file") MultipartFile file
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "force", defaultValue = "false") boolean force
     ) throws Exception {
-        return ResponseEntity.ok(documentService.analyzeSupplierDocument(file));
+        return ResponseEntity.ok(documentService.analyzeSupplierDocument(file, force));
     }
 
     @PostMapping("/{id}/approve-inventory")

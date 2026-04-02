@@ -85,6 +85,7 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
   const [dragActive, setDragActive] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadDialogData, setUploadDialogData] = useState<any | null>(null);
   const [initialFile, setInitialFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -666,14 +667,17 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
         onClose={() => {
           setUploadDialogOpen(false);
           setInitialFile(null);
+          setUploadDialogData(null);
         }}
         onSuccess={() => {
           setUploadDialogOpen(false);
           setInitialFile(null);
+          setUploadDialogData(null);
           loadSupplier();
         }}
         expectedSupplier={supplier ? { name: supplier.name, taxId: supplier.taxId } : undefined}
         initialFile={initialFile}
+        initialData={uploadDialogData}
       />
 
       <ConfirmDialog

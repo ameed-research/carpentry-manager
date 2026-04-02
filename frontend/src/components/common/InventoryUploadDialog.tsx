@@ -28,19 +28,25 @@ interface Props {
   onSuccess: () => void;
   expectedSupplier?: { name?: string; taxId?: string };
   initialFile?: File | null;
+  initialData?: any | null;
 }
 
-export default function InventoryUploadDialog({ open, onClose, onSuccess, expectedSupplier, initialFile }: Props) {
+export default function InventoryUploadDialog({ open, onClose, onSuccess, expectedSupplier, initialFile, initialData }: Props) {
   const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<any | null>(null);
 
   useEffect(() => {
-    if (open && initialFile && !analyzing && !extractedData && !error) {
-      handleFileSelect(initialFile);
+    if (open) {
+      if (initialData) {
+        setExtractedData(initialData);
+        setAnalyzing(false);
+      } else if (initialFile && !analyzing && !extractedData && !error) {
+        handleFileSelect(initialFile);
+      }
     }
-  }, [open, initialFile]);
+  }, [open, initialFile, initialData]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -59,13 +65,13 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess, expect
     }
   };
 
-  const handleFileSelect = async (selectedFile: File) => {
+  const handleFileSelect = async (selectedFile: File, force: boolean = false) => {
     setError(null);
     setAnalyzing(true);
     setExtractedData(null);
 
     try {
-      const response = await documentService.analyzeInventoryDocument(selectedFile);
+      const response = await documentService.analyzeInventoryDocument(selectedFile, force);
       const data = response.data;
       
       // Initialize selection and items
@@ -78,10 +84,21 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess, expect
 
       setExtractedData(data);
     } catch (err: any) {
+      if (err.response?.status === 409 && !force) {
+        if (window.confirm('המסמך כבר הועלה בעבר. האם ברצונך להמשיך בכל זאת?')) {
+          handleFileSelect(selectedFile, true);
+          return;
+        } else {
+          onClose();
+          return;
+        }
+      }
       console.error(err);
       setError(err.response?.data?.message || 'שגיאה בניתוח המסמך. ודא שהקובץ תקין.');
     } finally {
-      setAnalyzing(false);
+      if (!force) {
+        setAnalyzing(false);
+      }
     }
   };
 
