@@ -44,6 +44,13 @@ public class DocumentController {
         return ResponseEntity.ok(documentService.analyzeInventoryDocument(file));
     }
 
+    @PostMapping("/analyze-supplier")
+    public ResponseEntity<Map<String, Object>> analyzeSupplierDocument(
+            @RequestParam("file") MultipartFile file
+    ) throws Exception {
+        return ResponseEntity.ok(documentService.analyzeSupplierDocument(file));
+    }
+
     @PostMapping("/{id}/approve-inventory")
     public ResponseEntity<Void> approveInventoryDocument(
             @PathVariable String id,

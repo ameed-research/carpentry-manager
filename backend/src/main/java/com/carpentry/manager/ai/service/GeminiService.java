@@ -27,13 +27,44 @@ public class GeminiService {
     private final MessagesUtils messagesUtils;
     private final ObjectMapper objectMapper;
     private final RestClient restClient = RestClient.create();
+    
     @Value("${app.gemini.api-key}")
     private String apiKey;
+    
     @Value("${app.gemini.url}")
     private String url;
 
-    public Map<String, Object> extractPaymentData(MultipartFile file) {
-        return extractDocumentData(file, CarpentryDocument.DocumentType.PAYMENT_CHECK);
+    public Map<String, Object> analyzeSupplierDocument(MultipartFile file) {
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            log.warn("Gemini API key is not configured");
+            return new HashMap<>();
+        }
+
+        String prompt = "Analyze this supplier document. Determine if it is an INVOICE, DELIVERY_NOTE, CHEQUE, or BANK_TRANSFER. Return ONLY a JSON object with:\n" +
+                "1. For all types:\n" +
+                "   type (string: 'INVOICE', 'DELIVERY_NOTE', 'CHEQUE', or 'BANK_TRANSFER'),\n" +
+                "   supplierName (string, null if not present), supplierTaxId (string, null if not present),\n" +
+                "   date (string: YYYY-MM-DD, null if not present).\n" +
+                "2. If INVOICE or DELIVERY_NOTE:\n" +
+                "   documentId (string: invoice or delivery note number), totalAmountWithVat (number, null if not present), totalAmountWithoutVat (number, null if not present),\n" +
+                "   items (array of objects with: description, quantity, pricePerUnitWithoutVat, totalPriceWithoutVat, sku (string, null if not present)).\n" +
+                "3. If CHEQUE or BANK_TRANSFER:\n" +
+                "   amount (number), remarks (string, null if not present),\n" +
+                "   If CHEQUE: bank (string), branch (string), account (string), chequeNumber (string), dueDate (string: YYYY-MM-DD).\n" +
+                "   If BANK_TRANSFER: referenceNumber (string).";
+
+        Map<String, Object> requestBody = createRequestBody(file, prompt);
+        log.info("Sending supplier document '{}' to Gemini for unified analysis", file.getOriginalFilename());
+
+        String responseStr = restClient.post()
+                .uri(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("x-goog-api-key", apiKey)
+                .body(requestBody)
+                .retrieve()
+                .body(String.class);
+
+        return extractJsonAsMap(responseStr);
     }
 
     public Map<String, Object> analyzeInventoryDocument(MultipartFile file) {
@@ -61,6 +92,10 @@ public class GeminiService {
                 .body(String.class);
 
         return extractJsonAsMap(responseStr);
+    }
+
+    public Map<String, Object> extractPaymentData(MultipartFile file) {
+        return extractDocumentData(file, CarpentryDocument.DocumentType.PAYMENT_CHECK);
     }
 
     public Map<String, Object> extractDocumentData(MultipartFile file, CarpentryDocument.DocumentType type) {

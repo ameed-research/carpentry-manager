@@ -182,6 +182,64 @@ public class DocumentService {
         return extractedData;
     }
 
+    public Map<String, Object> analyzeSupplierDocument(MultipartFile file) throws Exception {
+        // Validate file type
+        String contentType = file.getContentType();
+        if (contentType == null || (!contentType.startsWith("image/") && !contentType.equals("application/pdf"))) {
+            throw new RuntimeException("סוג קובץ לא נתמך. יש להעלות תמונות או קבצי PDF בלבד.");
+        }
+
+        byte[] content = file.getBytes();
+        String fileHash = DigestUtils.md5Hex(content);
+
+        if (documentRepository.findByFileHash(fileHash).isPresent()) {
+            throw new RuntimeException("מסמך זה כבר הועלה בעבר");
+        }
+
+        Path root = Paths.get(docsPath);
+        if (!Files.exists(root)) {
+            Files.createDirectories(root);
+        }
+
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        Path filePath = root.resolve(fileName);
+        Files.write(filePath, content);
+
+        CarpentryDocument document = CarpentryDocument.builder()
+                .originalName(file.getOriginalFilename())
+                .filePath(filePath.toString())
+                .fileSize(file.getSize())
+                .fileHash(fileHash)
+                .uploadDate(LocalDateTime.now())
+                .status(CarpentryDocument.DocumentStatus.PENDING)
+                .build();
+
+        // 1. Send to Gemini for unified analysis
+        Map<String, Object> extractedData = geminiService.analyzeSupplierDocument(file);
+
+        // 2. Determine type
+        String typeStr = (String) extractedData.get("type");
+        if ("INVOICE".equals(typeStr)) {
+            document.setType(CarpentryDocument.DocumentType.INVOICE);
+        } else if ("DELIVERY_NOTE".equals(typeStr)) {
+            document.setType(CarpentryDocument.DocumentType.DELIVERY_NOTE);
+        } else if ("CHEQUE".equals(typeStr)) {
+            document.setType(CarpentryDocument.DocumentType.PAYMENT_CHECK);
+        } else if ("BANK_TRANSFER".equals(typeStr)) {
+            document.setType(CarpentryDocument.DocumentType.BANK_TRANSFER);
+        } else {
+            // Default to INVOICE if not matched
+            document.setType(CarpentryDocument.DocumentType.INVOICE);
+        }
+
+        document = documentRepository.save(document);
+
+        // Include database document ID in response
+        extractedData.put("dbDocumentId", document.getId());
+
+        return extractedData;
+    }
+
     public void approveInventoryDocument(String documentId, Map<String, Object> finalizedData) throws Exception {
         // 'documentId' here is the MongoDB ID (dbDocumentId from frontend)
         CarpentryDocument document = documentRepository.findById(documentId)

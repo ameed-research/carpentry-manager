@@ -16,6 +16,7 @@ import {
   TextField,
   IconButton,
   Tooltip,
+  CircularProgress,
 } from '@mui/material';
 import {
   ArrowForward as BackIcon,
@@ -81,8 +82,9 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
   const [editingDn, setEditingDn] = useState<DeliveryNote | null>(null);
   const [deleteDnId, setDeleteDnId] = useState<string | null>(null);
 
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [initialFile, setInitialFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -271,7 +273,7 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
@@ -279,8 +281,56 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
     if (isNew) return;
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setInitialFile(e.dataTransfer.files[0]);
-      setUploadDialogOpen(true);
+      const file = e.dataTransfer.files[0];
+      setIsAnalyzing(true);
+      try {
+        const response = await documentService.analyzeSupplierDocument(file);
+        const data = response.data as any;
+        
+        if (data.type === 'INVOICE') {
+          setEditingInvoice({
+            id: '',
+            invoiceId: data.documentId || '',
+            totalAmount: data.totalAmountWithVat || 0,
+            invoiceDate: data.date || new Date().toISOString().split('T')[0],
+            sourceDocumentId: data.dbDocumentId,
+            uploadDate: new Date().toISOString(),
+          });
+          setInvoiceDialogOpen(true);
+        } else if (data.type === 'DELIVERY_NOTE') {
+          setEditingDn({
+            id: '',
+            deliveryNoteId: data.documentId || '',
+            totalAmount: data.totalAmountWithVat || 0,
+            deliveryNoteDate: data.date || new Date().toISOString().split('T')[0],
+            sourceDocumentId: data.dbDocumentId,
+            uploadDate: new Date().toISOString(),
+          });
+          setDnDialogOpen(true);
+        } else if (data.type === 'CHEQUE' || data.type === 'BANK_TRANSFER') {
+          setEditingPayment({
+            date: data.dueDate || data.date || new Date().toISOString().split('T')[0],
+            amount: data.amount || 0,
+            method: data.type === 'CHEQUE' ? 'CHEQUE' : 'MONEY_TRANSFER',
+            remarks: data.remarks || '',
+            sourceDocumentId: data.dbDocumentId,
+            bank: data.bank || '',
+            branch: data.branch || '',
+            account: data.account || '',
+            chequeNumber: data.chequeNumber || '',
+            dueDate: data.dueDate || '',
+            referenceNumber: data.referenceNumber || '',
+          });
+          setPaymentDialogOpen(true);
+        } else {
+          alert('לא זוהה סוג מסמך נתמך (חשבונית, תעודת משלוח, צ\'ק או העברה בנקאית).');
+        }
+      } catch (error) {
+        console.error('Error analyzing document', error);
+        alert('שגיאה בניתוח המסמך. אנא נסה שוב.');
+      } finally {
+        setIsAnalyzing(false);
+      }
     }
   };
 
@@ -294,7 +344,13 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {dragActive && !isNew && (
+      {isAnalyzing && (
+        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10000, backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <CircularProgress size={80} sx={{ mb: 2 }} />
+          <Typography variant="h5" color="primary" fontWeight="bold">מנתח מסמך...</Typography>
+        </Box>
+      )}
+      {dragActive && !isNew && !isAnalyzing && (
         <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, backgroundColor: 'rgba(25, 118, 210, 0.1)', backdropFilter: 'blur(4px)', border: '4px dashed #1976d2', borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
            <CloudUploadIcon sx={{ fontSize: 80, color: '#1976d2', mb: 2 }} />
            <Typography variant="h4" color="primary" fontWeight="bold">שחרר קובץ להעלאה</Typography>
