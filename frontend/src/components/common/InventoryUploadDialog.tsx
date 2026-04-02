@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -27,13 +27,20 @@ interface Props {
   onClose: () => void;
   onSuccess: () => void;
   expectedSupplier?: { name?: string; taxId?: string };
+  initialFile?: File | null;
 }
 
-export default function InventoryUploadDialog({ open, onClose, onSuccess, expectedSupplier }: Props) {
+export default function InventoryUploadDialog({ open, onClose, onSuccess, expectedSupplier, initialFile }: Props) {
   const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (open && initialFile && !analyzing && !extractedData && !error) {
+      handleFileSelect(initialFile);
+    }
+  }, [open, initialFile]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();

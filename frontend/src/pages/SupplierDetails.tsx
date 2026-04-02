@@ -24,6 +24,7 @@ import {
   Description as DocIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
 import { supplierService } from '../services/supplierService';
 import type { Supplier, Invoice, DeliveryNote } from '../services/supplierService';
@@ -81,6 +82,8 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
   const [deleteDnId, setDeleteDnId] = useState<string | null>(null);
 
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [initialFile, setInitialFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (isNew) {
@@ -246,32 +249,57 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
     window.open(documentService.getDownloadUrl(docId), '_blank');
   };
 
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isNew) {
+      setDragActive(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  };
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    if (!isNew) {
+      setDragActive(true);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
     if (isNew) return;
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setInitialFile(e.dataTransfer.files[0]);
       setUploadDialogOpen(true);
-      // Hack to pass the file after a tiny delay so dialog mounts
-      setTimeout(() => {
-        const dialogInput = document.getElementById('inventory-upload-input') as HTMLInputElement;
-        if (dialogInput) {
-          const dataTransfer = new DataTransfer();
-          dataTransfer.items.add(e.dataTransfer.files[0]);
-          dialogInput.files = dataTransfer.files;
-          dialogInput.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      }, 300);
     }
   };
 
   if (!supplier && !isNew) return <Typography>טוען...</Typography>;
 
   return (
-    <Box sx={{ width: '100%' }} onDragOver={handleDragOver} onDrop={handleDrop}>
+    <Box 
+      sx={{ width: '100%', position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column' }} 
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {dragActive && !isNew && (
+        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, backgroundColor: 'rgba(25, 118, 210, 0.1)', backdropFilter: 'blur(4px)', border: '4px dashed #1976d2', borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+           <CloudUploadIcon sx={{ fontSize: 80, color: '#1976d2', mb: 2 }} />
+           <Typography variant="h4" color="primary" fontWeight="bold">שחרר קובץ להעלאה</Typography>
+        </Box>
+      )}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, width: '100%' }}>
         <IconButton onClick={onBack} sx={{ mr: 2 }}>
           <BackIcon />
@@ -579,12 +607,17 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
 
       <InventoryUploadDialog
         open={uploadDialogOpen}
-        onClose={() => setUploadDialogOpen(false)}
+        onClose={() => {
+          setUploadDialogOpen(false);
+          setInitialFile(null);
+        }}
         onSuccess={() => {
           setUploadDialogOpen(false);
+          setInitialFile(null);
           loadSupplier();
         }}
         expectedSupplier={supplier ? { name: supplier.name, taxId: supplier.taxId } : undefined}
+        initialFile={initialFile}
       />
 
       <ConfirmDialog
