@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 import { documentService } from '../../services/documentService';
+import { formatPrice } from '../../utils/formatPrice';
 
 interface Props {
   open: boolean;
@@ -36,6 +37,7 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess, expect
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<any | null>(null);
+  const [duplicateFile, setDuplicateFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -85,20 +87,13 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess, expect
       setExtractedData(data);
     } catch (err: any) {
       if (err.response?.status === 409 && !force) {
-        if (window.confirm('המסמך כבר הועלה בעבר. האם ברצונך להמשיך בכל זאת?')) {
-          handleFileSelect(selectedFile, true);
-          return;
-        } else {
-          onClose();
-          return;
-        }
+        setDuplicateFile(selectedFile);
+        return;
       }
       console.error(err);
       setError(err.response?.data?.message || 'שגיאה בניתוח המסמך. ודא שהקובץ תקין.');
     } finally {
-      if (!force) {
-        setAnalyzing(false);
-      }
+      setAnalyzing(false);
     }
   };
 
@@ -143,6 +138,7 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess, expect
     setError(null);
     setAnalyzing(false);
     setSaving(false);
+    setDuplicateFile(null);
     onClose();
   };
 
@@ -232,11 +228,11 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess, expect
                 </Grid>
                 <Grid size={{ xs: 6, sm: 4 }}>
                   <Typography variant="subtitle2" color="textSecondary">סך הכל לפני מע"מ</Typography>
-                  <Typography>₪{extractedData.totalAmountWithoutVat || 'לא צוין'}</Typography>
+                  <Typography>{extractedData.totalAmountWithoutVat ? formatPrice(extractedData.totalAmountWithoutVat) : 'לא צוין'}</Typography>
                 </Grid>
                 <Grid size={{ xs: 6, sm: 4 }}>
                   <Typography variant="subtitle2" color="textSecondary">סך הכל כולל מע"מ</Typography>
-                  <Typography>₪{extractedData.totalAmountWithVat || 'לא צוין'}</Typography>
+                  <Typography>{extractedData.totalAmountWithVat ? formatPrice(extractedData.totalAmountWithVat) : 'לא צוין'}</Typography>
                 </Grid>
               </Grid>
             </Paper>
@@ -318,6 +314,33 @@ export default function InventoryUploadDialog({ open, onClose, onSuccess, expect
           </Button>
         )}
       </DialogActions>
+
+      <Dialog open={!!duplicateFile} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ pb: 1 }}>מסמך כבר קיים</DialogTitle>
+        <DialogContent>
+          <Typography>
+            מסמך זה כבר הועלה בעבר. האם ברצונך להמשיך ולעבד אותו בכל זאת?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => { setDuplicateFile(null); onClose(); }}
+          >
+            ביטול
+          </Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => {
+              const file = duplicateFile!;
+              setDuplicateFile(null);
+              handleFileSelect(file, true);
+            }}
+          >
+            המשך בכל זאת
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }

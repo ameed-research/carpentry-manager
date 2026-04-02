@@ -23,6 +23,7 @@ import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/ico
 import { expenseService } from '../services/expenseService';
 import type { Expense } from '../services/expenseService';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import { formatPrice } from '../utils/formatPrice';
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -154,8 +155,8 @@ export default function Expenses() {
               <TableRow key={expense.id}>
                 <TableCell>{expense.date}</TableCell>
                 <TableCell>{expense.category}</TableCell>
-                <TableCell>₪{expense.amountExcludingVAT.toFixed(2)}</TableCell>
-                <TableCell>₪{expense.amountIncludingVAT.toFixed(2)}</TableCell>
+                <TableCell>{formatPrice(expense.amountExcludingVAT)}</TableCell>
+                <TableCell>{formatPrice(expense.amountIncludingVAT)}</TableCell>
                 <TableCell align="right">
                   <IconButton onClick={() => handleOpen(expense)}>
                     <EditIcon />
@@ -168,8 +169,8 @@ export default function Expenses() {
             ))}
             <TableRow sx={{ bgcolor: 'action.hover' }}>
               <TableCell colSpan={2}><strong>סה"כ</strong></TableCell>
-              <TableCell><strong>₪{totalExcl.toFixed(2)}</strong></TableCell>
-              <TableCell><strong>₪{totalIncl.toFixed(2)}</strong></TableCell>
+              <TableCell><strong>{formatPrice(totalExcl)}</strong></TableCell>
+              <TableCell><strong>{formatPrice(totalIncl)}</strong></TableCell>
               <TableCell />
             </TableRow>
           </TableBody>

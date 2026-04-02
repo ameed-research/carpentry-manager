@@ -17,6 +17,10 @@ import {
   IconButton,
   Tooltip,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   ArrowForward as BackIcon,
@@ -36,6 +40,7 @@ import DeliveryNoteDialog from '../components/common/DeliveryNoteDialog';
 import InventoryUploadDialog from '../components/common/InventoryUploadDialog';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { documentService } from '../services/documentService';
+import { formatPrice } from '../utils/formatPrice';
 
 interface Props {
   id: string; // 'new' if creating a new supplier
@@ -84,6 +89,7 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
 
   const [dragActive, setDragActive] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [duplicateFile, setDuplicateFile] = useState<File | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploadDialogData, setUploadDialogData] = useState<any | null>(null);
   const [initialFile, setInitialFile] = useState<File | null>(null);
@@ -274,64 +280,71 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
     }
   };
 
+  const processDroppedFile = async (file: File, force: boolean = false) => {
+    setIsAnalyzing(true);
+    try {
+      const response = await documentService.analyzeSupplierDocument(file, force);
+      const data = response.data as any;
+
+      if (data.type === 'INVOICE') {
+        setEditingInvoice({
+          id: '',
+          invoiceId: data.documentId || '',
+          totalAmount: data.totalAmountWithVat || 0,
+          invoiceDate: data.date || new Date().toISOString().split('T')[0],
+          sourceDocumentId: data.dbDocumentId,
+          uploadDate: new Date().toISOString(),
+        });
+        setInvoiceDialogOpen(true);
+      } else if (data.type === 'DELIVERY_NOTE') {
+        setEditingDn({
+          id: '',
+          deliveryNoteId: data.documentId || '',
+          totalAmount: data.totalAmountWithVat || 0,
+          deliveryNoteDate: data.date || new Date().toISOString().split('T')[0],
+          sourceDocumentId: data.dbDocumentId,
+          uploadDate: new Date().toISOString(),
+        });
+        setDnDialogOpen(true);
+      } else if (data.type === 'CHEQUE' || data.type === 'BANK_TRANSFER') {
+        setEditingPayment({
+          date: data.dueDate || data.date || new Date().toISOString().split('T')[0],
+          amount: data.amount || 0,
+          method: data.type === 'CHEQUE' ? 'CHEQUE' : 'MONEY_TRANSFER',
+          remarks: data.remarks || '',
+          sourceDocumentId: data.dbDocumentId,
+          bank: data.bank || '',
+          branch: data.branch || '',
+          account: data.account || '',
+          chequeNumber: data.chequeNumber || '',
+          dueDate: data.dueDate || '',
+          referenceNumber: data.referenceNumber || '',
+        });
+        setPaymentDialogOpen(true);
+      } else {
+        alert('לא זוהה סוג מסמך נתמך (חשבונית, תעודת משלוח, צ\'ק או העברה בנקאית).');
+      }
+    } catch (error: any) {
+      if (error.response?.status === 409 && !force) {
+        setDuplicateFile(file);
+        return;
+      }
+      console.error('Error analyzing document', error);
+      alert('שגיאה בניתוח המסמך. אנא נסה שוב.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (isNew) return;
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      setIsAnalyzing(true);
-      try {
-        const response = await documentService.analyzeSupplierDocument(file);
-        const data = response.data as any;
-        
-        if (data.type === 'INVOICE') {
-          setEditingInvoice({
-            id: '',
-            invoiceId: data.documentId || '',
-            totalAmount: data.totalAmountWithVat || 0,
-            invoiceDate: data.date || new Date().toISOString().split('T')[0],
-            sourceDocumentId: data.dbDocumentId,
-            uploadDate: new Date().toISOString(),
-          });
-          setInvoiceDialogOpen(true);
-        } else if (data.type === 'DELIVERY_NOTE') {
-          setEditingDn({
-            id: '',
-            deliveryNoteId: data.documentId || '',
-            totalAmount: data.totalAmountWithVat || 0,
-            deliveryNoteDate: data.date || new Date().toISOString().split('T')[0],
-            sourceDocumentId: data.dbDocumentId,
-            uploadDate: new Date().toISOString(),
-          });
-          setDnDialogOpen(true);
-        } else if (data.type === 'CHEQUE' || data.type === 'BANK_TRANSFER') {
-          setEditingPayment({
-            date: data.dueDate || data.date || new Date().toISOString().split('T')[0],
-            amount: data.amount || 0,
-            method: data.type === 'CHEQUE' ? 'CHEQUE' : 'MONEY_TRANSFER',
-            remarks: data.remarks || '',
-            sourceDocumentId: data.dbDocumentId,
-            bank: data.bank || '',
-            branch: data.branch || '',
-            account: data.account || '',
-            chequeNumber: data.chequeNumber || '',
-            dueDate: data.dueDate || '',
-            referenceNumber: data.referenceNumber || '',
-          });
-          setPaymentDialogOpen(true);
-        } else {
-          alert('לא זוהה סוג מסמך נתמך (חשבונית, תעודת משלוח, צ\'ק או העברה בנקאית).');
-        }
-      } catch (error) {
-        console.error('Error analyzing document', error);
-        alert('שגיאה בניתוח המסמך. אנא נסה שוב.');
-      } finally {
-        setIsAnalyzing(false);
-      }
+      await processDroppedFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -370,7 +383,7 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
         <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">יתרת ספק:</Typography>
           <Typography variant="h5" sx={{ fontWeight: 'bold', color: (supplier.balance || 0) < 0 ? 'error.main' : 'success.main' }}>
-            ₪{(supplier.balance || 0).toFixed(2)}
+            {formatPrice(supplier.balance || 0)}
           </Typography>
         </Box>
       )}
@@ -482,7 +495,7 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
                 {supplier.payments?.map((payment, index) => (
                   <TableRow key={payment.id || index}>
                     <TableCell>{formatDate(payment.date)}</TableCell>
-                    <TableCell>₪{payment.amount.toFixed(2)}</TableCell>
+                    <TableCell>{formatPrice(payment.amount)}</TableCell>
                     <TableCell>
                       {payment.method === 'CASH' ? 'מזומן' :
                         payment.method === 'CHEQUE' ? 'צ\'ק' : 'העברה בנקאית'}
@@ -553,7 +566,7 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
                     <TableCell>{invoice.invoiceId}</TableCell>
                     <TableCell>{formatDate(invoice.invoiceDate)}</TableCell>
                     <TableCell>{formatDate(invoice.uploadDate)}</TableCell>
-                    <TableCell>₪{(invoice.totalAmount || 0).toFixed(2)}</TableCell>
+                    <TableCell>{formatPrice(invoice.totalAmount || 0)}</TableCell>
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                         {invoice.sourceDocumentId && (
@@ -609,7 +622,7 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
                     <TableCell>{dn.deliveryNoteId}</TableCell>
                     <TableCell>{formatDate(dn.deliveryNoteDate)}</TableCell>
                     <TableCell>{formatDate(dn.uploadDate)}</TableCell>
-                    <TableCell>{dn.totalAmount ? `₪${dn.totalAmount.toFixed(2)}` : 'לא צוין'}</TableCell>
+                    <TableCell>{dn.totalAmount ? formatPrice(dn.totalAmount) : 'לא צוין'}</TableCell>
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                         {dn.sourceDocumentId && (
@@ -695,6 +708,29 @@ export default function SupplierDetails({ id, onBack, supplierData }: Props) {
         onConfirm={handleDeleteDn}
         onCancel={() => setDeleteDnId(null)}
       />
+
+      <Dialog open={!!duplicateFile} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ pb: 1 }}>מסמך כבר קיים</DialogTitle>
+        <DialogContent>
+          <Typography>
+            מסמך זה כבר הועלה בעבר. האם ברצונך להמשיך ולעבד אותו בכל זאת?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDuplicateFile(null)}>ביטול</Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => {
+              const file = duplicateFile!;
+              setDuplicateFile(null);
+              processDroppedFile(file, true);
+            }}
+          >
+            המשך בכל זאת
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

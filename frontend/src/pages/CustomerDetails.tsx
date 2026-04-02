@@ -33,6 +33,7 @@ import { customerService } from '../services/customerService';
 import type { Customer, Job, Payment } from '../services/customerService';
 
 import PaymentDialog from '../components/common/PaymentDialog';
+import { formatPrice } from '../utils/formatPrice';
 
 interface Props {
   id: string;
@@ -278,26 +279,26 @@ export default function CustomerDetails({ id, onBack }: Props) {
           <Grid size={{ xs: 12, md: 3 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="subtitle2">סה"כ עבודות</Typography>
-              <Typography variant="h6">₪{customer.totalAmount.toFixed(2)}</Typography>
+              <Typography variant="h6">{formatPrice(customer.totalAmount)}</Typography>
             </Paper>
           </Grid>
           <Grid size={{ xs: 12, md: 3 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="subtitle2">סה"כ שולם</Typography>
-              <Typography variant="h6">₪{customer.totalPaid.toFixed(2)}</Typography>
+              <Typography variant="h6">{formatPrice(customer.totalPaid)}</Typography>
             </Paper>
           </Grid>
           <Grid size={{ xs: 12, md: 3 }}>
             <Paper sx={{ p: 2, textAlign: 'center' }}>
               <Typography variant="subtitle2">הנחה</Typography>
-              <Typography variant="h6">₪{customer.discount.toFixed(2)}</Typography>
+              <Typography variant="h6">{formatPrice(customer.discount)}</Typography>
             </Paper>
           </Grid>
           <Grid size={{ xs: 12, md: 3 }}>
             <Paper sx={{ p: 2, textAlign: 'center', bgcolor: customer.debt > 0 ? '#ffebee' : '#e8f5e9' }}>
               <Typography variant="subtitle2">יתרת חוב</Typography>
               <Typography variant="h6" color={customer.debt > 0 ? 'error' : 'success'}>
-                ₪{customer.debt.toFixed(2)}
+                {formatPrice(customer.debt)}
               </Typography>
             </Paper>
           </Grid>
@@ -400,7 +401,7 @@ export default function CustomerDetails({ id, onBack }: Props) {
                   <TableRow key={job.id || index}>
                     <TableCell>{formatDate(job.date)}</TableCell>
                     <TableCell>{job.itemName}</TableCell>
-                    <TableCell>₪{job.price.toFixed(2)}</TableCell>
+                    <TableCell>{formatPrice(job.price)}</TableCell>
                     <TableCell align="center">
                       {!customer.closed && (
                         <>
@@ -430,7 +431,7 @@ export default function CustomerDetails({ id, onBack }: Props) {
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography>סה"כ לפני הנחה:</Typography>
-                    <Typography>₪{customer.totalAmount.toFixed(2)}</Typography>
+                    <Typography>{formatPrice(customer.totalAmount)}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography>הנחה:</Typography>
@@ -462,7 +463,7 @@ export default function CustomerDetails({ id, onBack }: Props) {
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', borderTop: 1, pt: 1 }}>
                     <Typography variant="h6">סה"כ לתשלום:</Typography>
-                    <Typography variant="h6">₪{(customer.totalAmount - personalData.discount).toFixed(2)}</Typography>
+                    <Typography variant="h6">{formatPrice(customer.totalAmount - personalData.discount)}</Typography>
                   </Box>
                 </Box>
               </Grid>
@@ -498,7 +499,7 @@ export default function CustomerDetails({ id, onBack }: Props) {
                 {customer.payments.map((payment, index) => (
                   <TableRow key={payment.id || index}>
                     <TableCell>{formatDate(payment.date)}</TableCell>
-                    <TableCell>₪{payment.amount.toFixed(2)}</TableCell>
+                    <TableCell>{formatPrice(payment.amount)}</TableCell>
                     <TableCell>
                       {payment.method === 'CASH' ? 'מזומן' :
                         payment.method === 'CHEQUE' ? 'צ\'ק' : 'העברה בנקאית'}
@@ -550,12 +551,12 @@ export default function CustomerDetails({ id, onBack }: Props) {
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
               <Box>
                 <Typography variant="subtitle2">סה"כ תשלומים שהתקבלו:</Typography>
-                <Typography variant="h6">₪{customer.totalPaid.toFixed(2)}</Typography>
+                <Typography variant="h6">{formatPrice(customer.totalPaid)}</Typography>
               </Box>
               <Box>
                 <Typography variant="subtitle2">חוב לקוח:</Typography>
                 <Typography variant="h6" color={customer.debt > 0 ? 'error' : 'success'}>
-                  ₪{customer.debt.toFixed(2)}
+                  {formatPrice(customer.debt)}
                 </Typography>
               </Box>
             </Box>

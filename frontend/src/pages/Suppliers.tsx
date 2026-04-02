@@ -17,6 +17,7 @@ import { supplierService } from '../services/supplierService';
 import type { Supplier } from '../services/supplierService';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import SupplierDetails from './SupplierDetails';
+import { formatPrice } from '../utils/formatPrice';
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -99,7 +100,7 @@ export default function Suppliers() {
                 <TableCell>{supplier.contactPerson}</TableCell>
                 <TableCell>{supplier.phone}</TableCell>
                 <TableCell sx={{ color: (supplier.balance || 0) < 0 ? 'error.main' : 'success.main' }}>
-                  ₪{(supplier.balance || 0).toFixed(2)}
+                  {formatPrice(supplier.balance || 0)}
                 </TableCell>
                 <TableCell align="right">
                   <IconButton onClick={() => {

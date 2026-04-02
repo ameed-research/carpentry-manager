@@ -21,6 +21,7 @@ import { customerService } from '../services/customerService';
 import type { Customer } from '../services/customerService';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import CustomerDetails from './CustomerDetails';
+import { formatPrice } from '../utils/formatPrice';
 
 export default function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -91,7 +92,7 @@ export default function Customers() {
                 <TableCell>{customer.name}</TableCell>
                 <TableCell>{customer.phone}</TableCell>
                 <TableCell sx={{ color: customer.debt > 0 ? 'error.main' : 'inherit' }}>
-                  ₪{customer.debt.toFixed(2)}
+                  {formatPrice(customer.debt)}
                 </TableCell>
                 <TableCell>{customer.closed ? 'סגור' : 'פתוח'}</TableCell>
                 <TableCell align="right">

@@ -21,10 +21,8 @@ import {
   People as CustomersIcon,
   Business as SuppliersIcon,
   Logout as LogoutIcon,
-  Category as CategoryIcon,
   Receipt as ExpenseIcon,
   CloudUpload as UploadIcon,
-  Assessment as AssessmentIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -57,14 +55,12 @@ export default function MainLayout({ children }: Props) {
   };
 
   const menuItems = [
-    { text: 'דאשבורד', icon: <DashboardIcon />, path: '/' },
+    { text: 'לוח בקרה', icon: <DashboardIcon />, path: '/' },
     { text: 'מלאי', icon: <InventoryIcon />, path: '/inventory' },
-    { text: 'קטגוריות', icon: <CategoryIcon />, path: '/categories' },
     { text: 'לקוחות', icon: <CustomersIcon />, path: '/customers' },
     { text: 'ספקים', icon: <SuppliersIcon />, path: '/suppliers' },
     { text: 'הוצאות', icon: <ExpenseIcon />, path: '/expenses' },
     { text: 'מסמכים', icon: <UploadIcon />, path: '/documents' },
-    { text: 'דוחות', icon: <AssessmentIcon />, path: '/reports' },
   ];
 
   if (isAdmin) {

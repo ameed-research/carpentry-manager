@@ -20,7 +20,10 @@ import {
   TablePagination,
   Box,
   Tooltip,
+  Link,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { formatPrice } from '../utils/formatPrice';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
@@ -37,6 +40,7 @@ import InventoryUploadDialog from '../components/common/InventoryUploadDialog';
 import type { InventoryHistory } from '../types';
 
 export default function Inventory() {
+  const navigate = useNavigate();
   const [items, setItems] = useState<Item[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
@@ -76,11 +80,14 @@ export default function Inventory() {
   };
 
   const filteredItems = useMemo(() => {
-    if (!filter) return items;
+    if (!filter.trim()) return items;
+    const parts = filter.trim().split(/\s+/).map(p => p.toLowerCase());
     return items.filter((item) =>
-      item.name.toLowerCase().includes(filter.toLowerCase()) ||
-      item.supplierName?.toLowerCase().includes(filter.toLowerCase()) ||
-      item.sku?.toLowerCase().includes(filter.toLowerCase())
+      parts.every(part =>
+        item.name.toLowerCase().includes(part) ||
+        item.supplierName?.toLowerCase().includes(part) ||
+        item.sku?.toLowerCase().includes(part)
+      )
     );
   }, [items, filter]);
 
@@ -234,8 +241,16 @@ export default function Inventory() {
               <TableRow key={item.id}>
                 <TableCell>{item.name}</TableCell>
                 <TableCell>{item.quantity}</TableCell>
-                <TableCell>{item.priceExcludingVAT?.toFixed(2)}</TableCell>
-                <TableCell>{item.supplierName}</TableCell>
+                <TableCell>{formatPrice(item.priceExcludingVAT)}</TableCell>
+                <TableCell>
+                  <Link
+                    component="button"
+                    underline="hover"
+                    onClick={() => navigate('/suppliers')}
+                  >
+                    {item.supplierName}
+                  </Link>
+                </TableCell>
                 <TableCell>{item.sku}</TableCell>
                 <TableCell align="right">
                   <Tooltip title="היסטוריית שינויים">
@@ -374,7 +389,7 @@ export default function Inventory() {
                     <TableCell>{new Date(h.changeDate).toLocaleString()}</TableCell>
                     <TableCell>{h.changedBy}</TableCell>
                     <TableCell>{h.snapshot.quantity}</TableCell>
-                    <TableCell>₪{h.snapshot.priceExcludingVAT}</TableCell>
+                    <TableCell>{formatPrice(h.snapshot.priceExcludingVAT)}</TableCell>
                     <TableCell>{h.snapshot.version}</TableCell>
                   </TableRow>
                 ))}

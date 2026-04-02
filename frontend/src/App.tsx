@@ -9,7 +9,6 @@ import Customers from './pages/Customers';
 import Suppliers from './pages/Suppliers';
 import Expenses from './pages/Expenses';
 import Documents from './pages/Documents';
-import Reports from './pages/Reports';
 import Users from './pages/Users';
 import MainLayout from './components/common/MainLayout';
 
@@ -40,7 +39,6 @@ function App() {
                   <Route path="/suppliers" element={<Suppliers />} />
                   <Route path="/expenses" element={<Expenses />} />
                   <Route path="/documents" element={<Documents />} />
-                  <Route path="/reports" element={<Reports />} />
                   <Route
                     path="/users"
                     element={
