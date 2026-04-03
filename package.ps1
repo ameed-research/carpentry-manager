@@ -25,4 +25,7 @@ mvn clean package -DskipTests
 Set-Location ..
 
 Write-Host "--- Packaging Complete! ---" -ForegroundColor Green
-Write-Host "Artifact location: backend/target/manager-0.0.1-SNAPSHOT.jar"
+Write-Host "Artifact location: backend/target/manager-1.0.jar"
+
+Write-Host "Running java -jar backend/target/manager-1.0.jar"
+java -jar backend/target/manager-1.0.jar
