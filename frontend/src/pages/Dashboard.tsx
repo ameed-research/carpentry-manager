@@ -251,7 +251,7 @@ export default function Dashboard() {
               ))}
             </Grid>
 
-            <TableContainer>
+            <TableContainer sx={{ '& .MuiTableCell-root': { textAlign: 'right' } }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -326,7 +326,7 @@ export default function Dashboard() {
               />
             </Box>
 
-            <TableContainer>
+            <TableContainer sx={{ '& .MuiTableCell-root': { textAlign: 'right' } }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>

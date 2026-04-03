@@ -161,6 +161,7 @@ public class ReportService {
 
     private String formatChequeNumber(Customer.Payment payment) {
         List<String> parts = new ArrayList<>();
+        if (payment.getBank() != null && !payment.getBank().isBlank()) parts.add(payment.getBank());
         if (payment.getBranch() != null && !payment.getBranch().isBlank()) parts.add(payment.getBranch());
         if (payment.getAccount() != null && !payment.getAccount().isBlank()) parts.add(payment.getAccount());
         if (payment.getChequeNumber() != null && !payment.getChequeNumber().isBlank()) parts.add(payment.getChequeNumber());
