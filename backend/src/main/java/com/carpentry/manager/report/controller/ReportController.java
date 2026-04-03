@@ -1,5 +1,6 @@
 package com.carpentry.manager.report.controller;
 
+import com.carpentry.manager.report.dto.ChequeControlItem;
 import com.carpentry.manager.report.dto.MonthlyFinancialReport;
 import com.carpentry.manager.report.dto.MonthlySummaryResponse;
 import com.carpentry.manager.report.service.ReportService;
@@ -9,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -31,5 +34,13 @@ public class ReportController {
             @RequestParam int month
     ) {
         return ResponseEntity.ok(reportService.getMonthlySummary(year, month));
+    }
+
+    @GetMapping("/cheques")
+    public ResponseEntity<List<ChequeControlItem>> getIncomingCheques(
+            @RequestParam int year,
+            @RequestParam int month
+    ) {
+        return ResponseEntity.ok(reportService.getIncomingCheques(year, month));
     }
 }

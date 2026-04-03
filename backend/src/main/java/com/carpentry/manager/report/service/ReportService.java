@@ -4,6 +4,7 @@ import com.carpentry.manager.customer.model.Customer;
 import com.carpentry.manager.customer.repository.CustomerRepository;
 import com.carpentry.manager.expense.model.Expense;
 import com.carpentry.manager.expense.repository.ExpenseRepository;
+import com.carpentry.manager.report.dto.ChequeControlItem;
 import com.carpentry.manager.report.dto.MonthlyFinancialReport;
 import com.carpentry.manager.report.dto.MonthlySummaryResponse;
 import com.carpentry.manager.supplier.model.Supplier;
@@ -138,6 +139,32 @@ public class ReportService {
                         .items(expenseItems)
                         .build())
                 .build();
+    }
+
+    public List<ChequeControlItem> getIncomingCheques(int year, int month) {
+        LocalDate start = LocalDate.of(year, month, 1);
+        LocalDate end = start.plusMonths(1).minusDays(1);
+
+        return customerRepository.findAll().stream()
+                .flatMap(customer -> customer.getPayments().stream()
+                        .filter(p -> p.getMethod() == Customer.PaymentMethod.CHEQUE)
+                        .filter(p -> p.getDueDate() != null && !p.getDueDate().isBefore(start) && !p.getDueDate().isAfter(end))
+                        .map(p -> ChequeControlItem.builder()
+                                .dueDate(p.getDueDate().toString())
+                                .amount(p.getAmount())
+                                .chequeNumber(formatChequeNumber(p))
+                                .customerName(customer.getName())
+                                .build()))
+                .sorted(Comparator.comparing(ChequeControlItem::getDueDate))
+                .toList();
+    }
+
+    private String formatChequeNumber(Customer.Payment payment) {
+        List<String> parts = new ArrayList<>();
+        if (payment.getBranch() != null && !payment.getBranch().isBlank()) parts.add(payment.getBranch());
+        if (payment.getAccount() != null && !payment.getAccount().isBlank()) parts.add(payment.getAccount());
+        if (payment.getChequeNumber() != null && !payment.getChequeNumber().isBlank()) parts.add(payment.getChequeNumber());
+        return parts.isEmpty() ? "צ'ק" : String.join("/", parts);
     }
 
     private String buildPaymentDetails(Supplier.Payment payment) {
